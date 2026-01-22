@@ -1,0 +1,392 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Facades\Auth;
+
+class Document extends Model
+{
+    use SoftDeletes;
+
+    protected $fillable = [
+        'document_number',
+        'title',
+        'description',
+        'document_type_id',
+        'document_category_id',
+        'directorate_id',
+        'unit_id',
+        'effective_date',
+        'expiry_date',
+        'review_date',
+        'retention_days',
+        'status',
+        'rejection_reason',
+        'current_version',
+        'is_locked',
+        'confidentiality',
+        'keywords',
+        'created_by',
+        'updated_by',
+        'approved_by',
+        'approved_at',
+        'published_by',
+        'published_at',
+    ];
+
+    protected $casts = [
+        'effective_date' => 'date',
+        'expiry_date' => 'date',
+        'review_date' => 'date',
+        'is_locked' => 'boolean',
+        'retention_days' => 'integer',
+        'current_version' => 'integer',
+        'approved_at' => 'datetime',
+        'published_at' => 'datetime',
+    ];
+
+    /**
+     * Status constants
+     */
+    const STATUS_DRAFT = 'draft';
+    const STATUS_PENDING_REVIEW = 'pending_review';
+    const STATUS_PENDING_APPROVAL = 'pending_approval';
+    const STATUS_APPROVED = 'approved';
+    const STATUS_PUBLISHED = 'published';
+    const STATUS_EXPIRED = 'expired';
+    const STATUS_ARCHIVED = 'archived';
+    const STATUS_REJECTED = 'rejected';
+
+    /**
+     * Confidentiality constants
+     */
+    const CONF_PUBLIC = 'public';
+    const CONF_INTERNAL = 'internal';
+    const CONF_CONFIDENTIAL = 'confidential';
+    const CONF_RESTRICTED = 'restricted';
+
+    /**
+     * Boot the model
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($document) {
+            if (!$document->created_by) {
+                $document->created_by = Auth::id();
+            }
+        });
+
+        static::updating(function ($document) {
+            $document->updated_by = Auth::id();
+        });
+    }
+
+    // ==================== RELATIONSHIPS ====================
+
+    /**
+     * Get the document type
+     */
+    public function documentType(): BelongsTo
+    {
+        return $this->belongsTo(DocumentType::class);
+    }
+
+    /**
+     * Get the document category
+     */
+    public function documentCategory(): BelongsTo
+    {
+        return $this->belongsTo(DocumentCategory::class);
+    }
+
+    /**
+     * Get the directorate
+     */
+    public function directorate(): BelongsTo
+    {
+        return $this->belongsTo(Directorate::class);
+    }
+
+    /**
+     * Get the unit
+     */
+    public function unit(): BelongsTo
+    {
+        return $this->belongsTo(Unit::class);
+    }
+
+    /**
+     * Get the creator
+     */
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
+    /**
+     * Get the last updater
+     */
+    public function updater(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'updated_by');
+    }
+
+    /**
+     * Get the approver
+     */
+    public function approver(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'approved_by');
+    }
+
+    /**
+     * Get the publisher
+     */
+    public function publisher(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'published_by');
+    }
+
+    /**
+     * Get all versions
+     */
+    public function versions(): HasMany
+    {
+        return $this->hasMany(DocumentVersion::class)->orderBy('version_number', 'desc');
+    }
+
+    /**
+     * Get current version
+     */
+    public function currentVersionRelation(): HasOne
+    {
+        return $this->hasOne(DocumentVersion::class)->where('is_current', true);
+    }
+
+    /**
+     * Get history
+     */
+    public function history(): HasMany
+    {
+        return $this->hasMany(DocumentHistory::class)->orderBy('created_at', 'desc');
+    }
+
+    /**
+     * Get approvals
+     */
+    public function approvals(): HasMany
+    {
+        return $this->hasMany(DocumentApproval::class)->orderBy('sequence');
+    }
+
+    /**
+     * Get access controls
+     */
+    public function accessControls(): HasMany
+    {
+        return $this->hasMany(DocumentAccess::class);
+    }
+
+    // ==================== SCOPES ====================
+
+    /**
+     * Scope: Filter by status
+     */
+    public function scopeStatus($query, $status)
+    {
+        if (is_array($status)) {
+            return $query->whereIn('status', $status);
+        }
+        return $query->where('status', $status);
+    }
+
+    /**
+     * Scope: Published documents
+     */
+    public function scopePublished($query)
+    {
+        return $query->where('status', self::STATUS_PUBLISHED);
+    }
+
+    /**
+     * Scope: Draft documents
+     */
+    public function scopeDraft($query)
+    {
+        return $query->where('status', self::STATUS_DRAFT);
+    }
+
+    /**
+     * Scope: Expired documents
+     */
+    public function scopeExpired($query)
+    {
+        return $query->where('expiry_date', '<', now());
+    }
+
+    /**
+     * Scope: Expiring soon (within days)
+     */
+    public function scopeExpiringSoon($query, int $days = 30)
+    {
+        return $query->whereBetween('expiry_date', [now(), now()->addDays($days)]);
+    }
+
+    /**
+     * Scope: Need review
+     */
+    public function scopeNeedsReview($query)
+    {
+        return $query->where('review_date', '<=', now());
+    }
+
+    /**
+     * Scope: Filter by confidentiality
+     */
+    public function scopeConfidentiality($query, $level)
+    {
+        return $query->where('confidentiality', $level);
+    }
+
+    /**
+     * Scope: Filter by type
+     */
+    public function scopeOfType($query, $typeId)
+    {
+        return $query->where('document_type_id', $typeId);
+    }
+
+    /**
+     * Scope: Filter by directorate
+     */
+    public function scopeOfDirectorate($query, $directorateId)
+    {
+        return $query->where('directorate_id', $directorateId);
+    }
+
+    /**
+     * Scope: Filter by unit
+     */
+    public function scopeOfUnit($query, $unitId)
+    {
+        return $query->where('unit_id', $unitId);
+    }
+
+    /**
+     * Scope: Created by user
+     */
+    public function scopeCreatedBy($query, $userId)
+    {
+        return $query->where('created_by', $userId);
+    }
+
+    /**
+     * Scope: Search by keyword
+     */
+    public function scopeSearch($query, string $search)
+    {
+        return $query->where(function ($q) use ($search) {
+            $q->where('document_number', 'like', "%{$search}%")
+              ->orWhere('title', 'like', "%{$search}%")
+              ->orWhere('keywords', 'like', "%{$search}%")
+              ->orWhere('description', 'like', "%{$search}%");
+        });
+    }
+
+    // ==================== HELPERS ====================
+
+    /**
+     * Check if document is editable
+     */
+    public function isEditable(): bool
+    {
+        return !$this->is_locked && in_array($this->status, [
+            self::STATUS_DRAFT,
+            self::STATUS_REJECTED,
+        ]);
+    }
+
+    /**
+     * Check if document can be submitted for review
+     */
+    public function canSubmitForReview(): bool
+    {
+        return in_array($this->status, [
+            self::STATUS_DRAFT,
+            self::STATUS_REJECTED,
+        ]) && $this->currentVersionRelation;
+    }
+
+    /**
+     * Check if document is expired
+     */
+    public function isExpired(): bool
+    {
+        return $this->expiry_date && $this->expiry_date->isPast();
+    }
+
+    /**
+     * Check if document is expiring soon
+     */
+    public function isExpiringSoon(int $days = 30): bool
+    {
+        return $this->expiry_date && $this->expiry_date->between(now(), now()->addDays($days));
+    }
+
+    /**
+     * Get status label in Indonesian
+     */
+    public function getStatusLabelAttribute(): string
+    {
+        return match ($this->status) {
+            self::STATUS_DRAFT => 'Draf',
+            self::STATUS_PENDING_REVIEW => 'Menunggu Review',
+            self::STATUS_PENDING_APPROVAL => 'Menunggu Persetujuan',
+            self::STATUS_APPROVED => 'Disetujui',
+            self::STATUS_PUBLISHED => 'Dipublikasi',
+            self::STATUS_EXPIRED => 'Kadaluarsa',
+            self::STATUS_ARCHIVED => 'Diarsipkan',
+            self::STATUS_REJECTED => 'Ditolak',
+            default => $this->status,
+        };
+    }
+
+    /**
+     * Get status color for badge
+     */
+    public function getStatusColorAttribute(): string
+    {
+        return match ($this->status) {
+            self::STATUS_DRAFT => 'gray',
+            self::STATUS_PENDING_REVIEW => 'yellow',
+            self::STATUS_PENDING_APPROVAL => 'orange',
+            self::STATUS_APPROVED => 'lime',
+            self::STATUS_PUBLISHED => 'primary',
+            self::STATUS_EXPIRED => 'red',
+            self::STATUS_ARCHIVED => 'gray',
+            self::STATUS_REJECTED => 'red',
+            default => 'gray',
+        };
+    }
+
+    /**
+     * Get confidentiality label
+     */
+    public function getConfidentialityLabelAttribute(): string
+    {
+        return match ($this->confidentiality) {
+            self::CONF_PUBLIC => 'Publik',
+            self::CONF_INTERNAL => 'Internal',
+            self::CONF_CONFIDENTIAL => 'Rahasia',
+            self::CONF_RESTRICTED => 'Terbatas',
+            default => $this->confidentiality,
+        };
+    }
+}
