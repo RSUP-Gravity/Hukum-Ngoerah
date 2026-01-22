@@ -144,39 +144,67 @@
                 </div>
                 <div class="card-body p-0">
                     <div class="list-group list-group-flush">
-                        @forelse($document->versions as $version)
-                        <div class="list-group-item d-flex justify-content-between align-items-center">
-                            <div class="d-flex align-items-center">
-                                <div class="me-3">
-                                    @php
-                                        $iconClass = match($version->file_extension) {
-                                            'pdf' => 'bi-file-earmark-pdf text-danger',
-                                            'doc', 'docx' => 'bi-file-earmark-word text-primary',
-                                            default => 'bi-file-earmark text-secondary',
-                                        };
-                                    @endphp
-                                    <i class="bi {{ $iconClass }} fs-3"></i>
-                                </div>
-                                <div>
-                                    <div class="fw-medium">
-                                        Versi {{ $version->version_number }}
-                                        @if($version->version_number === $document->current_version)
-                                            <span class="badge bg-success ms-1">Terbaru</span>
+                        @forelse($document->versions as $index => $version)
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="d-flex align-items-center">
+                                    <div class="me-3">
+                                        @php
+                                            $iconClass = match($version->file_extension) {
+                                                'pdf' => 'bi-file-earmark-pdf text-danger',
+                                                'doc', 'docx' => 'bi-file-earmark-word text-primary',
+                                                default => 'bi-file-earmark text-secondary',
+                                            };
+                                        @endphp
+                                        <i class="bi {{ $iconClass }} fs-3"></i>
+                                    </div>
+                                    <div>
+                                        <div class="fw-medium">
+                                            Versi {{ $version->version_number }}
+                                            @if($version->version_number === $document->current_version)
+                                                <span class="badge bg-success ms-1">Terbaru</span>
+                                            @endif
+                                        </div>
+                                        <small class="text-muted">
+                                            {{ $version->original_filename }} • 
+                                            {{ number_format($version->file_size / 1024, 0) }} KB •
+                                            {{ $version->created_at->format('d/m/Y H:i') }}
+                                        </small>
+                                        @if($version->change_notes)
+                                            <div class="small text-muted mt-1">{{ $version->change_notes }}</div>
                                         @endif
                                     </div>
-                                    <small class="text-muted">
-                                        {{ $version->original_filename }} • 
-                                        {{ number_format($version->file_size / 1024, 0) }} KB •
-                                        {{ $version->created_at->format('d/m/Y H:i') }}
-                                    </small>
-                                    @if($version->change_notes)
-                                        <div class="small text-muted mt-1">{{ $version->change_notes }}</div>
+                                </div>
+                                <div class="d-flex gap-1">
+                                    {{-- Compare with previous version --}}
+                                    @if($document->versions->count() > 1 && $version->version_number > 1)
+                                        @php
+                                            $prevVersion = $document->versions->firstWhere('version_number', $version->version_number - 1);
+                                        @endphp
+                                        @if($prevVersion)
+                                        <a href="{{ route('documents.compare-versions', [$document, $prevVersion, $version]) }}" 
+                                           class="btn btn-sm btn-outline-info" title="Bandingkan dengan versi sebelumnya">
+                                            <i class="bi bi-arrow-left-right"></i>
+                                        </a>
+                                        @endif
                                     @endif
+                                    
+                                    {{-- Restore version (Admin only, not current) --}}
+                                    @if(auth()->user()->isAdmin() && $version->version_number !== $document->current_version)
+                                    <form action="{{ route('documents.restore-version', [$document, $version]) }}" method="POST" class="d-inline"
+                                          onsubmit="return confirm('Pulihkan versi {{ $version->version_number }}?');">
+                                        @csrf
+                                        <button type="submit" class="btn btn-sm btn-outline-warning" title="Pulihkan versi ini">
+                                            <i class="bi bi-arrow-counterclockwise"></i>
+                                        </button>
+                                    </form>
+                                    @endif
+                                    
+                                    <a href="{{ route('documents.download', [$document, $version]) }}" class="btn btn-sm btn-outline-secondary" title="Download">
+                                        <i class="bi bi-download"></i>
+                                    </a>
                                 </div>
                             </div>
-                            <a href="{{ route('documents.download', [$document, $version]) }}" class="btn btn-sm btn-outline-secondary">
-                                <i class="bi bi-download"></i>
-                            </a>
                         </div>
                         @empty
                         <div class="list-group-item text-center text-muted py-4">
@@ -369,6 +397,15 @@
                         <dt class="col-sm-5 text-muted">Versi</dt>
                         <dd class="col-sm-7">{{ $document->current_version }}</dd>
                         
+                        <dt class="col-sm-5 text-muted">Jumlah Unduhan</dt>
+                        <dd class="col-sm-7">
+                            <span class="d-inline-flex align-items-center">
+                                <i class="bi bi-download me-2 text-primary"></i>
+                                <span class="fw-semibold">{{ $document->formatted_download_count }}</span>
+                                <small class="text-muted ms-1">kali</small>
+                            </span>
+                        </dd>
+                        
                         <dt class="col-sm-5 text-muted">Dibuat</dt>
                         <dd class="col-sm-7">
                             {{ $document->creator->name ?? '-' }}<br>
@@ -409,6 +446,48 @@
                 </div>
             </div>
             @endcan
+            
+            {{-- Related Documents --}}
+            @if($relatedDocuments->count() > 0)
+            <div class="glass-card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-link-45deg me-2"></i>Dokumen Terkait
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        @foreach($relatedDocuments as $related)
+                        <a href="{{ route('documents.show', $related) }}" class="list-group-item list-group-item-action py-3">
+                            <div class="d-flex w-100 justify-content-between align-items-start">
+                                <div class="flex-grow-1 me-2">
+                                    <div class="fw-medium text-truncate mb-1" style="max-width: 200px;" title="{{ $related->title }}">
+                                        {{ Str::limit($related->title, 40) }}
+                                    </div>
+                                    <div class="d-flex align-items-center gap-2 small text-muted">
+                                        <span class="badge bg-light text-dark">{{ $related->type->name ?? '-' }}</span>
+                                        @if($related->unit)
+                                        <span>{{ Str::limit($related->unit->name, 15) }}</span>
+                                        @endif
+                                    </div>
+                                </div>
+                                <div class="text-end">
+                                    <small class="text-muted">
+                                        {{ $related->document_date?->format('d/m/Y') }}
+                                    </small>
+                                </div>
+                            </div>
+                        </a>
+                        @endforeach
+                    </div>
+                </div>
+                <div class="card-footer text-center">
+                    <a href="{{ route('documents.index', ['type' => $document->document_type_id]) }}" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-arrow-right me-1"></i>Lihat Semua
+                    </a>
+                </div>
+            </div>
+            @endif
         </div>
     </div>
 </div>

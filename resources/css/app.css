@@ -1,4 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import 'browser-compatibility.css';
+@import 'lazy-loading.css';
 
 @tailwind base;
 @tailwind components;
@@ -271,6 +273,66 @@
         background: var(--surface-glass);
     }
 
+    /* Table Row Selection State */
+    .glass-table tbody tr.row-selected,
+    .table-primary,
+    tr[data-selected="true"] {
+        background: linear-gradient(90deg, rgba(0, 160, 176, 0.08), rgba(164, 198, 57, 0.05)) !important;
+        border-left: 3px solid var(--color-primary);
+        position: relative;
+    }
+
+    .glass-table tbody tr.row-selected::before,
+    .table-primary::before,
+    tr[data-selected="true"]::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 3px;
+        background: var(--gradient-primary);
+    }
+
+    .glass-table tbody tr.row-selected:hover,
+    .table-primary:hover,
+    tr[data-selected="true"]:hover {
+        background: linear-gradient(90deg, rgba(0, 160, 176, 0.12), rgba(164, 198, 57, 0.08)) !important;
+    }
+
+    .dark .glass-table tbody tr.row-selected,
+    .dark .table-primary,
+    .dark tr[data-selected="true"] {
+        background: linear-gradient(90deg, rgba(0, 196, 214, 0.12), rgba(184, 217, 77, 0.08)) !important;
+    }
+
+    /* Checkbox in table */
+    .glass-table input[type="checkbox"],
+    .table input[type="checkbox"] {
+        @apply w-4 h-4 rounded cursor-pointer transition-all duration-200;
+        accent-color: var(--color-primary);
+    }
+
+    .glass-table input[type="checkbox"]:checked,
+    .table input[type="checkbox"]:checked {
+        background: var(--gradient-primary);
+        border-color: var(--color-primary);
+    }
+
+    .glass-table input[type="checkbox"]:focus,
+    .table input[type="checkbox"]:focus {
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(0, 160, 176, 0.2);
+    }
+
+    /* Select All header checkbox indeterminate state */
+    input[type="checkbox"]:indeterminate {
+        background: var(--color-primary);
+        border-color: var(--color-primary);
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='white' d='M4 8a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7A.5.5 0 0 1 4 8z'/%3e%3c/svg%3e");
+        background-size: 100%;
+    }
+
     .glass-table tbody td {
         @apply px-4 py-4;
     }
@@ -400,3 +462,497 @@
         animation: fadeIn 0.15s ease-out;
     }
 }
+
+/* ============================================
+   Page Transition Animations
+   ============================================ */
+
+/* Page transition overlay */
+.page-transition-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-lime) 100%);
+    z-index: 9999;
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(-100%);
+    transition: opacity 0.3s ease-out, transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.page-transition-overlay.active {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.page-transition-overlay.exit {
+    opacity: 0;
+    transform: translateY(100%);
+}
+
+/* Page content enter animation */
+.page-content {
+    opacity: 0;
+    transform: translateY(12px);
+    transition: opacity 0.35s ease-out, transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.page-content.page-enter-active {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Staggered children animation */
+.page-content.page-enter-active > *:nth-child(1) { transition-delay: 0ms; }
+.page-content.page-enter-active > *:nth-child(2) { transition-delay: 50ms; }
+.page-content.page-enter-active > *:nth-child(3) { transition-delay: 100ms; }
+.page-content.page-enter-active > *:nth-child(4) { transition-delay: 150ms; }
+.page-content.page-enter-active > *:nth-child(5) { transition-delay: 200ms; }
+
+/* Glass card subtle entrance */
+.glass-card {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+    animation: glassCardEnter 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.glass-card:nth-child(1) { animation-delay: 0.05s; }
+.glass-card:nth-child(2) { animation-delay: 0.1s; }
+.glass-card:nth-child(3) { animation-delay: 0.15s; }
+.glass-card:nth-child(4) { animation-delay: 0.2s; }
+.glass-card:nth-child(5) { animation-delay: 0.25s; }
+.glass-card:nth-child(6) { animation-delay: 0.3s; }
+
+@keyframes glassCardEnter {
+    0% {
+        opacity: 0;
+        transform: translateY(8px) scale(0.98);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Page leave animation */
+.page-leaving .page-content {
+    opacity: 0;
+    transform: translateY(-12px);
+    transition: opacity 0.15s ease-in, transform 0.2s ease-in;
+}
+
+/* Skeleton loading animation */
+@keyframes shimmer {
+    0% {
+        background-position: -200% 0;
+    }
+    100% {
+        background-position: 200% 0;
+    }
+}
+
+.skeleton {
+    background: linear-gradient(
+        90deg,
+        var(--surface-glass) 25%,
+        var(--surface-glass-elevated) 50%,
+        var(--surface-glass) 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 8px;
+}
+
+/* Loading spinner for buttons */
+.btn-loading {
+    position: relative;
+    color: transparent !important;
+    pointer-events: none;
+}
+
+.btn-loading::after {
+    content: '';
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    top: 50%;
+    left: 50%;
+    margin-left: -8px;
+    margin-top: -8px;
+    border: 2px solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Smooth fade for modals */
+.modal-backdrop-enter {
+    animation: fadeIn 0.2s ease-out;
+}
+
+.modal-content-enter {
+    animation: modalEnter 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modalEnter {
+    0% {
+        opacity: 0;
+        transform: scale(0.95) translateY(-10px);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+    .page-content,
+    .glass-card,
+    .page-transition-overlay,
+    .skeleton {
+        animation: none !important;
+        transition: none !important;
+        opacity: 1 !important;
+        transform: none !important;
+    }
+}
+
+/* ============================================
+   Mobile Bottom Navigation
+   ============================================ */
+
+.mobile-bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 40;
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    height: 64px;
+    padding: 0 8px;
+    padding-bottom: env(safe-area-inset-bottom, 0);
+    background: var(--surface-glass-elevated);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid var(--surface-glass-border);
+    box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.08);
+}
+
+.dark .mobile-bottom-nav {
+    box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.3);
+}
+
+.mobile-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 8px 12px;
+    min-width: 56px;
+    border-radius: 12px;
+    color: var(--text-tertiary);
+    font-size: 10px;
+    font-weight: 500;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.mobile-nav-item:hover,
+.mobile-nav-item:focus {
+    color: var(--text-secondary);
+    background: var(--surface-glass);
+}
+
+.mobile-nav-item.active {
+    color: var(--color-primary);
+}
+
+.mobile-nav-item.active svg {
+    transform: scale(1.1);
+}
+
+/* Center Add Button */
+.mobile-nav-add {
+    position: relative;
+    margin-top: -24px;
+}
+
+.mobile-nav-add-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: var(--gradient-primary);
+    color: white;
+    box-shadow: 0 4px 16px rgba(0, 160, 176, 0.4);
+    transition: all 0.2s ease;
+}
+
+.mobile-nav-add:hover .mobile-nav-add-btn,
+.mobile-nav-add:focus .mobile-nav-add-btn {
+    transform: scale(1.05);
+    box-shadow: 0 6px 20px rgba(0, 160, 176, 0.5);
+}
+
+.mobile-nav-add:active .mobile-nav-add-btn {
+    transform: scale(0.95);
+}
+
+/* Add padding to main content to prevent overlap with bottom nav on mobile */
+@media (max-width: 1023px) {
+    main {
+        padding-bottom: 80px !important;
+    }
+}
+
+/* Hide bottom nav when keyboard is open (optional enhancement) */
+@media (max-height: 400px) {
+    .mobile-bottom-nav {
+        display: none;
+    }
+}
+
+/* ============================================
+   Mobile Swipe Gestures
+   ============================================ */
+
+/* Swipe container */
+.swipe-container {
+    position: relative;
+    overflow: hidden;
+    touch-action: pan-y pinch-zoom;
+}
+
+/* Swipeable content wrapper */
+.swipe-content {
+    position: relative;
+    transition: transform 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
+    will-change: transform;
+    z-index: 2;
+    background: inherit;
+}
+
+.swipe-content.swiping {
+    transition: none;
+}
+
+/* Swipe actions container - left side (swipe right to reveal) */
+.swipe-actions-left {
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    display: flex;
+    align-items: stretch;
+    z-index: 1;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.swipe-actions-left.visible {
+    opacity: 1;
+}
+
+/* Swipe actions container - right side (swipe left to reveal) */
+.swipe-actions-right {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: stretch;
+    z-index: 1;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.swipe-actions-right.visible {
+    opacity: 1;
+}
+
+/* Individual swipe action button */
+.swipe-action {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-width: 72px;
+    padding: 0 16px;
+    color: white;
+    font-size: 0.75rem;
+    font-weight: 500;
+    gap: 4px;
+    transition: transform 0.2s ease, background-color 0.2s ease;
+}
+
+.swipe-action svg,
+.swipe-action i {
+    font-size: 1.25rem;
+}
+
+.swipe-action:active {
+    transform: scale(0.95);
+}
+
+/* Action colors */
+.swipe-action-view {
+    background: linear-gradient(135deg, #3B82F6, #1D4ED8);
+}
+
+.swipe-action-download {
+    background: linear-gradient(135deg, #10B981, #059669);
+}
+
+.swipe-action-edit {
+    background: linear-gradient(135deg, #F59E0B, #D97706);
+}
+
+.swipe-action-delete {
+    background: linear-gradient(135deg, #EF4444, #DC2626);
+}
+
+.swipe-action-share {
+    background: linear-gradient(135deg, #8B5CF6, #7C3AED);
+}
+
+/* Swipe hint indicator */
+.swipe-hint {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    padding: 4px 8px;
+    font-size: 0.625rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-tertiary);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    pointer-events: none;
+}
+
+.swipe-hint-left {
+    left: 8px;
+}
+
+.swipe-hint-right {
+    right: 8px;
+}
+
+.swipe-container:active .swipe-hint {
+    opacity: 0.6;
+}
+
+/* Swipe feedback overlay */
+.swipe-feedback {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 100%;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.swipe-feedback-left {
+    left: 0;
+    background: linear-gradient(90deg, rgba(59, 130, 246, 0.1) 0%, transparent 50%);
+}
+
+.swipe-feedback-right {
+    right: 0;
+    background: linear-gradient(-90deg, rgba(16, 185, 129, 0.1) 0%, transparent 50%);
+}
+
+.swipe-container.swiping-left .swipe-feedback-right,
+.swipe-container.swiping-right .swipe-feedback-left {
+    opacity: 1;
+}
+
+/* Mobile card with swipe enabled */
+@media (max-width: 768px) {
+    .swipe-enabled-card {
+        margin-left: -12px;
+        margin-right: -12px;
+        border-radius: 0;
+    }
+    
+    .swipe-enabled-card .card-body {
+        padding-left: 16px;
+        padding-right: 16px;
+    }
+}
+
+/* Disable swipe on desktop */
+@media (min-width: 1024px) {
+    .swipe-container {
+        touch-action: auto;
+    }
+    
+    .swipe-actions-left,
+    .swipe-actions-right {
+        display: none !important;
+    }
+}
+
+/* Animation for action completion */
+@keyframes swipe-action-complete {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.1);
+    }
+    100% {
+        transform: scale(0.8);
+        opacity: 0;
+    }
+}
+
+.swipe-action.completing {
+    animation: swipe-action-complete 0.3s ease-out forwards;
+}
+
+/* Pull-to-refresh indicator integration */
+.swipe-container.pull-refresh::before {
+    content: '';
+    position: absolute;
+    top: -60px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 32px;
+    height: 32px;
+    border: 3px solid var(--color-primary);
+    border-right-color: transparent;
+    border-radius: 50%;
+    opacity: 0;
+    transition: opacity 0.2s ease, top 0.2s ease;
+}
+
+.swipe-container.pull-refresh.pulling::before {
+    opacity: 1;
+    top: 16px;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: translateX(-50%) rotate(360deg);
+    }
+}
+

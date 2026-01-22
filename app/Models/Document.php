@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -11,7 +12,7 @@ use Illuminate\Support\Facades\Auth;
 
 class Document extends Model
 {
-    use SoftDeletes;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
         'document_number',
@@ -28,6 +29,7 @@ class Document extends Model
         'status',
         'rejection_reason',
         'current_version',
+        'download_count',
         'is_locked',
         'confidentiality',
         'keywords',
@@ -46,6 +48,7 @@ class Document extends Model
         'is_locked' => 'boolean',
         'retention_days' => 'integer',
         'current_version' => 'integer',
+        'download_count' => 'integer',
         'approved_at' => 'datetime',
         'published_at' => 'datetime',
     ];
@@ -206,6 +209,34 @@ class Document extends Model
     public function accessControls(): HasMany
     {
         return $this->hasMany(DocumentAccess::class);
+    }
+
+    // ==================== DOWNLOAD TRACKING ====================
+
+    /**
+     * Increment download count
+     */
+    public function incrementDownloadCount(): void
+    {
+        $this->increment('download_count');
+    }
+
+    /**
+     * Get formatted download count
+     */
+    public function getFormattedDownloadCountAttribute(): string
+    {
+        $count = $this->download_count ?? 0;
+        
+        if ($count >= 1000000) {
+            return round($count / 1000000, 1) . 'M';
+        }
+        
+        if ($count >= 1000) {
+            return round($count / 1000, 1) . 'K';
+        }
+        
+        return (string) $count;
     }
 
     // ==================== SCOPES ====================

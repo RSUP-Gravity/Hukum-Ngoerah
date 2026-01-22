@@ -34,7 +34,7 @@ Route::get('/', function () {
 // Guest Routes (not authenticated)
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
-    Route::post('/login', [AuthController::class, 'login']);
+    Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:login');
 });
 
 // Authenticated Routes
@@ -70,6 +70,17 @@ Route::middleware('auth')->group(function () {
     Route::prefix('documents')->name('documents.')->group(function () {
         Route::get('/', [DocumentController::class, 'index'])->name('index')
             ->middleware('permission:documents.view');
+        Route::get('/export', [DocumentController::class, 'export'])->name('export')
+            ->middleware(['permission:documents.view', 'throttle:exports']);
+        Route::get('/export-pdf', [DocumentController::class, 'exportPdf'])->name('export-pdf')
+            ->middleware(['permission:documents.view', 'throttle:exports']);
+        
+        // Bulk actions
+        Route::post('/bulk-archive', [DocumentController::class, 'bulkArchive'])->name('bulk-archive')
+            ->middleware('permission:documents.edit');
+        Route::post('/bulk-delete', [DocumentController::class, 'bulkDelete'])->name('bulk-delete')
+            ->middleware('permission:documents.delete');
+        
         Route::get('/create', [DocumentController::class, 'create'])->name('create')
             ->middleware('permission:documents.create');
         Route::post('/', [DocumentController::class, 'store'])->name('store')
@@ -85,9 +96,9 @@ Route::middleware('auth')->group(function () {
         
         // Document actions
         Route::get('/{document}/download/{version?}', [DocumentController::class, 'download'])->name('download')
-            ->middleware('permission:documents.download');
+            ->middleware(['permission:documents.download', 'throttle:downloads']);
         Route::get('/{document}/print', [DocumentController::class, 'print'])->name('print')
-            ->middleware('permission:documents.print');
+            ->middleware(['permission:documents.print', 'throttle:downloads']);
         Route::post('/{document}/upload-version', [DocumentController::class, 'uploadVersion'])->name('upload-version')
             ->middleware('permission:documents.edit');
         Route::post('/{document}/submit-review', [DocumentController::class, 'submitForReview'])->name('submit-review')
@@ -111,8 +122,25 @@ Route::middleware('auth')->group(function () {
         Route::delete('/{document}/access/{access}', [DocumentController::class, 'revokeAccess'])->name('access.destroy')
             ->middleware('permission:documents.manage_access');
         
+        // Version management
+        Route::get('/{document}/compare/{version1}/{version2}', [DocumentController::class, 'compareVersions'])->name('compare-versions')
+            ->middleware('permission:documents.view');
+        Route::post('/{document}/restore-version/{version}', [DocumentController::class, 'restoreVersion'])->name('restore-version')
+            ->middleware('role:admin');
+        
         // AJAX helpers
         Route::get('/categories-by-type/{type}', [DocumentController::class, 'categoriesByType'])->name('categories-by-type');
+        Route::get('/search-suggestions', [DocumentController::class, 'searchSuggestions'])->name('search-suggestions')
+            ->middleware('throttle:search');
+        
+        // Lazy load filter options API
+        Route::prefix('api/filters')->name('api.filters.')->group(function () {
+            Route::get('/types', [\App\Http\Controllers\Api\FilterOptionsController::class, 'types'])->name('types');
+            Route::get('/categories', [\App\Http\Controllers\Api\FilterOptionsController::class, 'categories'])->name('categories');
+            Route::get('/units', [\App\Http\Controllers\Api\FilterOptionsController::class, 'units'])->name('units');
+            Route::get('/status-counts', [\App\Http\Controllers\Api\FilterOptionsController::class, 'statusCounts'])->name('status-counts');
+            Route::get('/all', [\App\Http\Controllers\Api\FilterOptionsController::class, 'all'])->name('all');
+        });
     });
     
     // Master Data Routes

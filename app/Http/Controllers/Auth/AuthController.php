@@ -123,6 +123,9 @@ class AuthController extends Controller
                 ->with('warning', 'Anda harus mengganti password Anda.');
         }
 
+        // Set session flag for login notification popup
+        $request->session()->put('show_login_notification', true);
+
         return redirect()->intended(route('dashboard'))
             ->with('success', "Selamat datang, {$user->name}!");
     }

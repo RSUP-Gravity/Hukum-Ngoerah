@@ -1,0 +1,359 @@
+/* ============================================
+   Browser Compatibility CSS
+   Safari, Firefox, Edge specific fixes
+   ============================================ */
+
+/* ============================================
+   Safari Fixes
+   ============================================ */
+
+/* Fix backdrop-filter for Safari */
+@supports (-webkit-backdrop-filter: none) or (backdrop-filter: none) {
+    .glass-card,
+    .glass-surface {
+        -webkit-backdrop-filter: blur(20px);
+        backdrop-filter: blur(20px);
+    }
+}
+
+/* Safari doesn't support backdrop-filter in some cases */
+@supports not ((-webkit-backdrop-filter: none) or (backdrop-filter: none)) {
+    .glass-card,
+    .glass-surface {
+        background: rgba(255, 255, 255, 0.95);
+    }
+    
+    .dark .glass-card,
+    .dark .glass-surface {
+        background: rgba(30, 41, 59, 0.95);
+    }
+}
+
+/* Fix Safari flexbox gap */
+@supports not (gap: 1rem) {
+    .flex > * + * {
+        margin-left: 1rem;
+    }
+    
+    .flex-col > * + * {
+        margin-top: 1rem;
+    }
+}
+
+/* Safari input zoom prevention */
+@media screen and (-webkit-min-device-pixel-ratio: 0) {
+    input[type="text"],
+    input[type="email"],
+    input[type="password"],
+    input[type="search"],
+    input[type="number"],
+    select,
+    textarea {
+        font-size: 16px !important;
+    }
+}
+
+/* Safari sticky position fix */
+.sticky {
+    position: -webkit-sticky;
+    position: sticky;
+}
+
+/* Safari smooth scrolling */
+html {
+    -webkit-overflow-scrolling: touch;
+}
+
+/* ============================================
+   Firefox Fixes
+   ============================================ */
+
+/* Firefox scrollbar styling */
+@-moz-document url-prefix() {
+    * {
+        scrollbar-width: thin;
+        scrollbar-color: rgba(0, 160, 176, 0.3) transparent;
+    }
+    
+    .dark * {
+        scrollbar-color: rgba(0, 196, 214, 0.3) transparent;
+    }
+}
+
+/* Firefox focus ring */
+@-moz-document url-prefix() {
+    button::-moz-focus-inner,
+    input::-moz-focus-inner {
+        border: 0;
+        padding: 0;
+    }
+    
+    button:focus,
+    input:focus,
+    select:focus,
+    textarea:focus {
+        outline: 2px solid var(--color-primary);
+        outline-offset: 2px;
+    }
+}
+
+/* Firefox gradient text fix */
+@-moz-document url-prefix() {
+    .gradient-text {
+        background: linear-gradient(135deg, #00A0B0, #A4C639);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+        color: transparent;
+    }
+}
+
+/* Firefox select appearance */
+@-moz-document url-prefix() {
+    select {
+        -moz-appearance: none;
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748B' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 12px center;
+        padding-right: 36px;
+    }
+}
+
+/* ============================================
+   Edge (Chromium) Fixes
+   ============================================ */
+
+/* Edge-specific scroll behavior */
+@supports (-ms-ime-align: auto) {
+    html {
+        scroll-behavior: smooth;
+    }
+}
+
+/* Edge input clear button */
+input::-ms-clear,
+input::-ms-reveal {
+    display: none;
+}
+
+/* ============================================
+   Internet Explorer 11 Fallbacks
+   (Basic support only)
+   ============================================ */
+
+@media all and (-ms-high-contrast: none), (-ms-high-contrast: active) {
+    /* IE11 flexbox fix */
+    .flex {
+        display: -ms-flexbox;
+        display: flex;
+    }
+    
+    .flex-col {
+        -ms-flex-direction: column;
+        flex-direction: column;
+    }
+    
+    /* IE11 grid fallback */
+    .grid {
+        display: -ms-grid;
+        display: grid;
+    }
+    
+    /* IE11 doesn't support CSS variables */
+    .glass-card {
+        background: rgba(255, 255, 255, 0.9);
+        border: 1px solid rgba(0, 160, 176, 0.2);
+    }
+}
+
+/* ============================================
+   Cross-browser Fixes
+   ============================================ */
+
+/* Normalize button appearance across browsers */
+button,
+[type="button"],
+[type="submit"],
+[type="reset"] {
+    -webkit-appearance: button;
+    appearance: button;
+}
+
+/* Normalize textarea resize */
+textarea {
+    resize: vertical;
+}
+
+/* Normalize placeholder opacity */
+::placeholder {
+    opacity: 1;
+    color: var(--text-tertiary, #94A3B8);
+}
+
+::-webkit-input-placeholder {
+    opacity: 1;
+    color: var(--text-tertiary, #94A3B8);
+}
+
+::-moz-placeholder {
+    opacity: 1;
+    color: var(--text-tertiary, #94A3B8);
+}
+
+:-ms-input-placeholder {
+    opacity: 1;
+    color: var(--text-tertiary, #94A3B8);
+}
+
+/* Normalize focus states */
+:focus {
+    outline: none;
+}
+
+:focus-visible {
+    outline: 2px solid var(--color-primary, #00A0B0);
+    outline-offset: 2px;
+}
+
+/* Normalize transitions */
+*,
+*::before,
+*::after {
+    -webkit-transition-property: background-color, border-color, color, fill, stroke, opacity, box-shadow, transform;
+    transition-property: background-color, border-color, color, fill, stroke, opacity, box-shadow, transform;
+    -webkit-transition-duration: 150ms;
+    transition-duration: 150ms;
+}
+
+/* Normalize transform */
+.transform {
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+}
+
+/* ============================================
+   Print Styles
+   ============================================ */
+
+@media print {
+    /* Hide non-essential elements */
+    .no-print,
+    nav,
+    aside,
+    .sidebar,
+    .navbar,
+    button:not(.print-visible),
+    .modal,
+    .dropdown {
+        display: none !important;
+    }
+    
+    /* Reset glassmorphism for print */
+    .glass-card {
+        background: white !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+        box-shadow: none !important;
+        border: 1px solid #ddd !important;
+    }
+    
+    /* Ensure text is readable */
+    body {
+        color: black !important;
+        background: white !important;
+    }
+    
+    /* Show URLs for links */
+    a[href]:after {
+        content: " (" attr(href) ")";
+        font-size: 0.8em;
+        color: #666;
+    }
+    
+    /* Page breaks */
+    h1, h2, h3 {
+        page-break-after: avoid;
+    }
+    
+    table, figure {
+        page-break-inside: avoid;
+    }
+}
+
+/* ============================================
+   High Contrast Mode
+   ============================================ */
+
+@media (prefers-contrast: high) {
+    .glass-card {
+        background: white;
+        border: 2px solid black;
+    }
+    
+    .dark .glass-card {
+        background: black;
+        border: 2px solid white;
+    }
+    
+    button,
+    .btn {
+        border: 2px solid currentColor;
+    }
+}
+
+/* ============================================
+   Reduced Motion
+   ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+/* ============================================
+   Touch Device Optimizations
+   ============================================ */
+
+@media (hover: none) and (pointer: coarse) {
+    /* Larger touch targets */
+    button,
+    .btn,
+    a,
+    input[type="checkbox"],
+    input[type="radio"] {
+        min-height: 44px;
+        min-width: 44px;
+    }
+    
+    /* Remove hover effects on touch */
+    .hover\:bg-gray-100:hover {
+        background-color: inherit;
+    }
+    
+    /* Active state instead of hover */
+    button:active,
+    .btn:active,
+    a:active {
+        opacity: 0.7;
+    }
+}
+
+/* ============================================
+   Dark Mode Fallback for older browsers
+   ============================================ */
+
+@media (prefers-color-scheme: dark) {
+    :root:not(.light) {
+        --bg-primary: #0F172A;
+        --bg-secondary: #1E293B;
+        --text-primary: #F1F5F9;
+        --text-secondary: #94A3B8;
+    }
+}

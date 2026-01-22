@@ -1,0 +1,185 @@
+/* ============================================
+   Lazy Loading Styles
+   ============================================ */
+
+/* Loading state */
+.lazy-loading {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(90deg, var(--bg-secondary) 25%, var(--surface-glass) 50%, var(--bg-secondary) 75%);
+    background-size: 200% 100%;
+    animation: lazy-shimmer 1.5s infinite;
+}
+
+@keyframes lazy-shimmer {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+/* Lazy loading placeholder */
+.lazy-loading::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 160, 176, 0.05);
+}
+
+/* Loaded state */
+.lazy-loaded {
+    animation: lazy-fade-in 0.3s ease-out forwards;
+}
+
+@keyframes lazy-fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Error state */
+.lazy-error {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px dashed rgba(239, 68, 68, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--status-expired);
+}
+
+.lazy-error::after {
+    content: '⚠ Gagal memuat';
+    font-size: 0.875rem;
+}
+
+/* Image placeholder styling */
+img.lazy-loading {
+    min-height: 100px;
+    background-color: var(--bg-secondary);
+}
+
+img.lazy-loading[data-lazy-src] {
+    object-fit: cover;
+}
+
+/* Iframe placeholder */
+div[data-lazy-iframe].lazy-loading {
+    min-height: 200px;
+    border-radius: 0.5rem;
+}
+
+/* Component placeholder */
+div[data-lazy-component].lazy-loading {
+    min-height: 150px;
+    border-radius: 0.75rem;
+}
+
+/* Table placeholder */
+div[data-lazy-table].lazy-loading {
+    min-height: 300px;
+}
+
+/* Chart placeholder */
+div[data-lazy-chart] {
+    min-height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+div[data-lazy-chart].lazy-loading {
+    background: var(--bg-secondary);
+    border-radius: 0.75rem;
+}
+
+div.chart-loaded {
+    animation: none;
+    background: transparent;
+}
+
+/* Native lazy loading blur-up effect */
+img[loading="lazy"] {
+    transition: filter 0.3s ease-out;
+}
+
+img[loading="lazy"]:not([src]) {
+    filter: blur(10px);
+}
+
+/* Skeleton components */
+.skeleton {
+    background: linear-gradient(90deg, var(--bg-secondary) 25%, var(--surface-glass) 50%, var(--bg-secondary) 75%);
+    background-size: 200% 100%;
+    animation: lazy-shimmer 1.5s infinite;
+    border-radius: 0.375rem;
+}
+
+.skeleton-text {
+    height: 1rem;
+    width: 100%;
+    margin-bottom: 0.5rem;
+}
+
+.skeleton-text-sm {
+    height: 0.75rem;
+    width: 80%;
+}
+
+.skeleton-title {
+    height: 1.5rem;
+    width: 60%;
+    margin-bottom: 1rem;
+}
+
+.skeleton-avatar {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 9999px;
+}
+
+.skeleton-button {
+    height: 2.5rem;
+    width: 6rem;
+    border-radius: 0.5rem;
+}
+
+.skeleton-card {
+    height: 150px;
+    border-radius: 0.75rem;
+}
+
+.skeleton-image {
+    height: 200px;
+    border-radius: 0.5rem;
+}
+
+/* Dark mode adjustments */
+.dark .lazy-loading {
+    background: linear-gradient(90deg, var(--bg-secondary) 25%, rgba(51, 65, 85, 0.5) 50%, var(--bg-secondary) 75%);
+    background-size: 200% 100%;
+}
+
+.dark .skeleton {
+    background: linear-gradient(90deg, var(--bg-secondary) 25%, rgba(51, 65, 85, 0.5) 50%, var(--bg-secondary) 75%);
+    background-size: 200% 100%;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    .lazy-loading,
+    .skeleton {
+        animation: none;
+        background: var(--bg-secondary);
+    }
+    
+    .lazy-loaded {
+        animation: none;
+    }
+}

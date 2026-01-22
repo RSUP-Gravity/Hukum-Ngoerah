@@ -50,6 +50,7 @@ class DocumentHistory extends Model
     const ACTION_UNLOCKED = 'unlocked';
     const ACTION_COMMENT = 'comment_added';
     const ACTION_STATUS_CHANGED = 'status_changed';
+    const ACTION_VERSION_RESTORED = 'version_restored';
 
     /**
      * Get the document
@@ -102,6 +103,7 @@ class DocumentHistory extends Model
             self::ACTION_UNLOCKED => 'Dibuka kunci',
             self::ACTION_COMMENT => 'Komentar ditambahkan',
             self::ACTION_STATUS_CHANGED => 'Status diubah',
+            self::ACTION_VERSION_RESTORED => 'Versi dipulihkan',
             default => $this->action,
         };
     }

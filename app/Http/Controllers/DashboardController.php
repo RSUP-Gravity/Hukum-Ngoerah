@@ -4,13 +4,20 @@ namespace App\Http\Controllers;
 
 use App\Models\Document;
 use App\Models\DocumentApproval;
+use App\Models\DocumentHistory;
 use App\Models\Notification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
+    /**
+     * Cache TTL in seconds (5 minutes)
+     */
+    const CACHE_TTL = 300;
+
     /**
      * Display the dashboard
      */
@@ -30,6 +37,9 @@ class DashboardController extends Controller
         // Get expiring documents
         $expiringDocuments = $this->getExpiringDocuments($user);
         
+        // Get recent activity timeline
+        $recentActivities = $this->getRecentActivities($user);
+        
         // Get recent notifications
         $recentNotifications = $user->notifications()
             ->orderBy('created_at', 'desc')
@@ -39,44 +49,92 @@ class DashboardController extends Controller
         // Get chart data
         $chartData = $this->getChartData($user);
 
+        // Check if we should show login notification popup
+        $showLoginNotification = false;
+        $criticalDocuments = collect();
+        
+        if ($request->session()->pull('show_login_notification', false)) {
+            // Only show for admin users
+            if ($user->hasPermission('documents.view_all') || $user->hasRole('admin')) {
+                // Get critical documents (expired or expiring within 30 days)
+                $criticalDocuments = Document::with(['documentType', 'directorate'])
+                    ->where(function ($query) {
+                        $query->expired()
+                            ->orWhere(function ($q) {
+                                $q->whereNotNull('expiry_date')
+                                    ->whereBetween('expiry_date', [now(), now()->addDays(30)]);
+                            });
+                    })
+                    ->orderBy('expiry_date', 'asc')
+                    ->limit(10)
+                    ->get();
+                
+                $showLoginNotification = $criticalDocuments->count() > 0;
+            }
+        }
+
         return view('dashboard', compact(
             'stats',
             'pendingApprovals',
             'recentDocuments',
             'expiringDocuments',
+            'recentActivities',
             'recentNotifications',
-            'chartData'
+            'chartData',
+            'showLoginNotification',
+            'criticalDocuments'
         ));
     }
 
     /**
-     * Get dashboard statistics
+     * Refresh dashboard cache (for AJAX refresh button)
+     */
+    public function refreshCache(Request $request)
+    {
+        $user = Auth::user();
+        
+        // Clear user's dashboard caches
+        Cache::forget("dashboard_stats_user_{$user->id}");
+        Cache::forget("dashboard_charts_user_{$user->id}");
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Dashboard cache berhasil diperbarui',
+        ]);
+    }
+
+    /**
+     * Get dashboard statistics with caching (5 minute TTL)
      */
     protected function getStatistics($user): array
     {
-        $query = Document::query();
+        $cacheKey = "dashboard_stats_user_{$user->id}";
         
-        // Filter based on user permissions
-        if (!$user->hasPermission('documents.view_all')) {
-            $query->where(function ($q) use ($user) {
-                $q->where('created_by', $user->id)
-                  ->orWhere('unit_id', $user->unit_id);
-            });
-        }
+        return Cache::remember($cacheKey, self::CACHE_TTL, function () use ($user) {
+            $query = Document::query();
+            
+            // Filter based on user permissions
+            if (!$user->hasPermission('documents.view_all')) {
+                $query->where(function ($q) use ($user) {
+                    $q->where('created_by', $user->id)
+                      ->orWhere('unit_id', $user->unit_id);
+                });
+            }
 
-        return [
-            'total_documents' => (clone $query)->count(),
-            'draft_documents' => (clone $query)->status(Document::STATUS_DRAFT)->count(),
-            'pending_approval' => (clone $query)->status([
-                Document::STATUS_PENDING_REVIEW,
-                Document::STATUS_PENDING_APPROVAL,
-            ])->count(),
-            'published_documents' => (clone $query)->status(Document::STATUS_PUBLISHED)->count(),
-            'expiring_soon' => (clone $query)->expiringSoon(30)->count(),
-            'expired_documents' => (clone $query)->expired()->count(),
-            'my_pending_approvals' => DocumentApproval::forApprover($user->id)->pending()->count(),
-            'unread_notifications' => $user->unreadNotifications()->count(),
-        ];
+            return [
+                'total_documents' => (clone $query)->count(),
+                'draft_documents' => (clone $query)->status(Document::STATUS_DRAFT)->count(),
+                'pending_approval' => (clone $query)->status([
+                    Document::STATUS_PENDING_REVIEW,
+                    Document::STATUS_PENDING_APPROVAL,
+                ])->count(),
+                'published_documents' => (clone $query)->status(Document::STATUS_PUBLISHED)->count(),
+                'expiring_soon' => (clone $query)->expiringSoon(30)->count(),
+                'expired_documents' => (clone $query)->expired()->count(),
+                'my_pending_approvals' => DocumentApproval::forApprover($user->id)->pending()->count(),
+                'unread_notifications' => $user->unreadNotifications()->count(),
+            ];
+        });
     }
 
     /**
@@ -134,64 +192,157 @@ class DashboardController extends Controller
     }
 
     /**
-     * Get chart data for documents
+     * Get recent activities for activity timeline
+     */
+    protected function getRecentActivities($user)
+    {
+        $query = DocumentHistory::with(['document', 'performer'])
+            ->whereHas('document')
+            ->orderBy('created_at', 'desc');
+        
+        // Filter based on user permissions
+        if (!$user->hasPermission('documents.view_all')) {
+            $query->whereHas('document', function ($q) use ($user) {
+                $q->where('created_by', $user->id)
+                  ->orWhere('unit_id', $user->unit_id);
+            });
+        }
+        
+        // Exclude view actions to reduce noise
+        $query->whereNotIn('action', [
+            DocumentHistory::ACTION_VIEWED,
+        ]);
+
+        return $query->limit(15)->get();
+    }
+
+    /**
+     * Get chart data for documents with caching (5 minute TTL)
      */
     protected function getChartData($user): array
     {
-        // Documents by status
-        $byStatus = Document::select('status', DB::raw('count(*) as total'))
-            ->when(!$user->hasPermission('documents.view_all'), function ($q) use ($user) {
-                $q->where(function ($sub) use ($user) {
-                    $sub->where('created_by', $user->id)
-                        ->orWhere('unit_id', $user->unit_id);
-                });
-            })
-            ->groupBy('status')
-            ->get()
-            ->pluck('total', 'status')
-            ->toArray();
+        $cacheKey = "dashboard_charts_user_{$user->id}";
+        
+        return Cache::remember($cacheKey, self::CACHE_TTL, function () use ($user) {
+            // Documents by status
+            $byStatus = Document::select('status', DB::raw('count(*) as total'))
+                ->when(!$user->hasPermission('documents.view_all'), function ($q) use ($user) {
+                    $q->where(function ($sub) use ($user) {
+                        $sub->where('created_by', $user->id)
+                            ->orWhere('unit_id', $user->unit_id);
+                    });
+                })
+                ->groupBy('status')
+                ->get()
+                ->pluck('total', 'status')
+                ->toArray();
 
-        // Documents by type
-        $byType = Document::select('document_type_id', DB::raw('count(*) as total'))
-            ->with('documentType:id,name')
-            ->when(!$user->hasPermission('documents.view_all'), function ($q) use ($user) {
-                $q->where(function ($sub) use ($user) {
-                    $sub->where('created_by', $user->id)
-                        ->orWhere('unit_id', $user->unit_id);
-                });
-            })
-            ->groupBy('document_type_id')
-            ->get()
-            ->map(function ($item) {
-                return [
-                    'name' => $item->documentType?->name ?? 'Tidak Diketahui',
-                    'total' => $item->total,
-                ];
-            })
-            ->toArray();
+            // Documents by type
+            $byType = Document::select('document_type_id', DB::raw('count(*) as total'))
+                ->with('documentType:id,name')
+                ->when(!$user->hasPermission('documents.view_all'), function ($q) use ($user) {
+                    $q->where(function ($sub) use ($user) {
+                        $sub->where('created_by', $user->id)
+                            ->orWhere('unit_id', $user->unit_id);
+                    });
+                })
+                ->groupBy('document_type_id')
+                ->get()
+                ->map(function ($item) {
+                    return [
+                        'id' => $item->document_type_id,
+                        'name' => $item->documentType?->name ?? 'Tidak Diketahui',
+                        'total' => $item->total,
+                    ];
+                })
+                ->toArray();
 
-        // Documents created per month (last 12 months)
-        $perMonth = Document::select(
-                DB::raw("DATE_FORMAT(created_at, '%Y-%m') as month"),
-                DB::raw('count(*) as total')
-            )
-            ->where('created_at', '>=', now()->subMonths(12))
-            ->when(!$user->hasPermission('documents.view_all'), function ($q) use ($user) {
-                $q->where(function ($sub) use ($user) {
-                    $sub->where('created_by', $user->id)
-                        ->orWhere('unit_id', $user->unit_id);
-                });
-            })
-            ->groupBy('month')
-            ->orderBy('month')
-            ->get()
-            ->pluck('total', 'month')
-            ->toArray();
+            // Documents by category (Tipe Dokumen)
+            $byCategory = Document::select('document_category_id', DB::raw('count(*) as total'))
+                ->with('documentCategory:id,name')
+                ->when(!$user->hasPermission('documents.view_all'), function ($q) use ($user) {
+                    $q->where(function ($sub) use ($user) {
+                        $sub->where('created_by', $user->id)
+                            ->orWhere('unit_id', $user->unit_id);
+                    });
+                })
+                ->groupBy('document_category_id')
+                ->get()
+                ->map(function ($item) {
+                    return [
+                        'id' => $item->document_category_id,
+                        'name' => $item->documentCategory?->name ?? 'Tidak Diketahui',
+                        'total' => $item->total,
+                    ];
+                })
+                ->toArray();
 
-        return [
-            'by_status' => $byStatus,
-            'by_type' => $byType,
-            'per_month' => $perMonth,
-        ];
+            // Documents by directorate
+            $byDirectorate = Document::select('directorate_id', DB::raw('count(*) as total'))
+                ->with('directorate:id,name')
+                ->when(!$user->hasPermission('documents.view_all'), function ($q) use ($user) {
+                    $q->where(function ($sub) use ($user) {
+                        $sub->where('created_by', $user->id)
+                            ->orWhere('unit_id', $user->unit_id);
+                    });
+                })
+                ->groupBy('directorate_id')
+                ->get()
+                ->map(function ($item) {
+                    return [
+                        'id' => $item->directorate_id,
+                        'name' => $item->directorate?->name ?? 'Tidak Diketahui',
+                        'total' => $item->total,
+                    ];
+                })
+                ->toArray();
+
+            // Documents created per month (last 12 months)
+            $perMonth = Document::select(
+                    DB::raw("DATE_FORMAT(created_at, '%Y-%m') as month"),
+                    DB::raw('count(*) as total')
+                )
+                ->where('created_at', '>=', now()->subMonths(12))
+                ->when(!$user->hasPermission('documents.view_all'), function ($q) use ($user) {
+                    $q->where(function ($sub) use ($user) {
+                        $sub->where('created_by', $user->id)
+                            ->orWhere('unit_id', $user->unit_id);
+                    });
+                })
+                ->groupBy('month')
+                ->orderBy('month')
+                ->get()
+                ->pluck('total', 'month')
+                ->toArray();
+
+            // Expiry timeline (next 6 months)
+            $expiryTimeline = [];
+            for ($i = 0; $i < 6; $i++) {
+                $startDate = now()->addMonths($i)->startOfMonth();
+                $endDate = now()->addMonths($i)->endOfMonth();
+                $monthLabel = $startDate->translatedFormat('M Y');
+                
+                $count = Document::whereNotNull('expiry_date')
+                    ->whereBetween('expiry_date', [$startDate, $endDate])
+                    ->when(!$user->hasPermission('documents.view_all'), function ($q) use ($user) {
+                        $q->where(function ($sub) use ($user) {
+                            $sub->where('created_by', $user->id)
+                                ->orWhere('unit_id', $user->unit_id);
+                        });
+                    })
+                    ->count();
+                
+                $expiryTimeline[$monthLabel] = $count;
+            }
+
+            return [
+                'by_status' => $byStatus,
+                'by_type' => $byType,
+                'by_category' => $byCategory,
+                'by_directorate' => $byDirectorate,
+                'per_month' => $perMonth,
+                'expiry_timeline' => $expiryTimeline,
+            ];
+        });
     }
 }

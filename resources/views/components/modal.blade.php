@@ -25,6 +25,9 @@
     x-show="open"
     x-cloak
     class="fixed inset-0 z-50 overflow-y-auto"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="{{ $name }}-title"
 >
     <!-- Backdrop -->
     <div
@@ -37,6 +40,7 @@
         x-transition:leave-end="opacity-0"
         class="modal-backdrop"
         @if($closeable) @click="hide()" @endif
+        aria-hidden="true"
     >
         <!-- Modal Content -->
         <div
@@ -49,14 +53,16 @@
             x-transition:leave-end="opacity-0 scale-95"
             class="modal-content {{ $maxWidthClass }}"
             @click.stop
+            x-trap.noscroll="open"
         >
             <!-- Close Button -->
             @if($closeable)
                 <button
                     @click="hide()"
                     class="absolute top-4 right-4 p-2 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-glass)] transition-colors"
+                    aria-label="Close modal"
                 >
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                     </svg>
                 </button>
@@ -64,7 +70,7 @@
 
             <!-- Modal Header -->
             @if(isset($header))
-                <div class="mb-6">
+                <div class="mb-6" id="{{ $name }}-title">
                     {{ $header }}
                 </div>
             @endif

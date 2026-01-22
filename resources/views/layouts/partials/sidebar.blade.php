@@ -7,6 +7,8 @@
         '-translate-x-full lg:translate-x-0': !mobileOpen,
         'translate-x-0': mobileOpen
     }"
+    role="navigation"
+    aria-label="Main navigation sidebar"
 >
     <div class="h-full flex flex-col">
         <!-- Logo -->

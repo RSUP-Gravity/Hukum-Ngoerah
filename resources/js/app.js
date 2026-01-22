@@ -1,6 +1,8 @@
 import './bootstrap';
 import Alpine from 'alpinejs';
 import Chart from 'chart.js/auto';
+import './lazy-loading';
+import './lazy-filters';
 
 // Initialize Alpine.js
 window.Alpine = Alpine;

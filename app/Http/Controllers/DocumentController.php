@@ -13,6 +13,7 @@ use App\Models\DocumentVersion;
 use App\Models\Notification;
 use App\Models\Unit;
 use App\Models\User;
+use App\Services\FileUploadSecurityService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -77,10 +78,22 @@ class DocumentController extends Controller
             $query->expiringSoon($request->expiring_days);
         }
         
-        // Sort
-        $sortField = $request->input('sort', 'updated_at');
-        $sortDir = $request->input('dir', 'desc');
-        $query->orderBy($sortField, $sortDir);
+        // Multi-column sort support
+        // Format: sort=column1,column2 dir=asc,desc
+        $sortFields = explode(',', $request->input('sort', 'updated_at'));
+        $sortDirs = explode(',', $request->input('dir', 'desc'));
+        
+        foreach ($sortFields as $index => $field) {
+            $field = trim($field);
+            $dir = isset($sortDirs[$index]) ? trim($sortDirs[$index]) : 'asc';
+            // Validate sort direction
+            $dir = in_array(strtolower($dir), ['asc', 'desc']) ? strtolower($dir) : 'asc';
+            // Validate field name (only allow known fields)
+            $allowedFields = ['document_number', 'title', 'document_date', 'updated_at', 'created_at', 'expiry_date', 'status'];
+            if (in_array($field, $allowedFields)) {
+                $query->orderBy($field, $dir);
+            }
+        }
 
         $documents = $query->paginate(20);
         
@@ -165,9 +178,19 @@ class DocumentController extends Controller
                 'updated_by' => $user->id,
             ]);
 
-            // Handle file upload
+            // Handle file upload with security validation
             if ($request->hasFile('file')) {
-                $this->uploadDocumentFile($document, $request->file('file'), 1);
+                $file = $request->file('file');
+                
+                // Validate file security
+                $securityService = new FileUploadSecurityService();
+                $securityResult = $securityService->validate($file, ['pdf', 'doc', 'docx']);
+                
+                if (!$securityResult['valid']) {
+                    throw new \Exception($securityResult['error']);
+                }
+                
+                $this->uploadDocumentFile($document, $file, 1);
             }
 
             // Record history
@@ -241,7 +264,21 @@ class DocumentController extends Controller
             ]);
         }
 
-        return view('documents.show', compact('document'));
+        // Get related documents (same type or same mitra/unit)
+        $relatedDocuments = Document::where('id', '!=', $document->id)
+            ->where(function ($query) use ($document) {
+                $query->where('document_type_id', $document->document_type_id);
+                if ($document->unit_id) {
+                    $query->orWhere('unit_id', $document->unit_id);
+                }
+            })
+            ->whereIn('status', [Document::STATUS_PUBLISHED, Document::STATUS_APPROVED])
+            ->with(['type', 'unit'])
+            ->latest('created_at')
+            ->limit(5)
+            ->get();
+
+        return view('documents.show', compact('document', 'relatedDocuments'));
     }
 
     /**
@@ -827,6 +864,9 @@ class DocumentController extends Controller
             return back()->with('error', 'File tidak ditemukan.');
         }
 
+        // Increment download count
+        $document->incrementDownloadCount();
+
         // Record download history
         DocumentHistory::create([
             'document_id' => $document->id,
@@ -991,10 +1031,19 @@ class DocumentController extends Controller
         try {
             DB::beginTransaction();
 
+            // Validate file security
+            $file = $request->file('file');
+            $securityService = new FileUploadSecurityService();
+            $securityResult = $securityService->validate($file, ['pdf', 'doc', 'docx']);
+            
+            if (!$securityResult['valid']) {
+                throw new \Exception($securityResult['error']);
+            }
+
             $user = auth()->user();
             $newVersion = $document->current_version + 1;
 
-            $this->uploadDocumentFile($document, $request->file('file'), $newVersion, $request->change_notes);
+            $this->uploadDocumentFile($document, $file, $newVersion, $request->change_notes);
             
             $document->update([
                 'current_version' => $newVersion,
@@ -1031,6 +1080,210 @@ class DocumentController extends Controller
         $categories = $type->categories()->active()->sorted()->get(['id', 'name']);
         
         return response()->json($categories);
+    }
+
+    /**
+     * Get search suggestions (AJAX)
+     */
+    public function searchSuggestions(Request $request)
+    {
+        $query = $request->input('q', '');
+        
+        if (strlen($query) < 2) {
+            return response()->json([]);
+        }
+
+        $user = auth()->user();
+        
+        // Build base query
+        $documentsQuery = Document::query()
+            ->select('id', 'title', 'document_number', 'document_type_id', 'status')
+            ->with('type:id,name');
+
+        // Non-admin users can only see published/approved or their own documents
+        if (!$user->isAdmin()) {
+            $documentsQuery->where(function ($q) use ($user) {
+                $q->whereIn('status', [Document::STATUS_PUBLISHED, Document::STATUS_APPROVED])
+                  ->orWhere('created_by', $user->id);
+            });
+        }
+
+        // Search by title or document number
+        $documents = $documentsQuery
+            ->where(function ($q) use ($query) {
+                $q->where('title', 'like', "%{$query}%")
+                  ->orWhere('document_number', 'like', "%{$query}%");
+            })
+            ->orderByRaw("CASE WHEN title LIKE ? THEN 0 WHEN document_number LIKE ? THEN 1 ELSE 2 END", ["{$query}%", "{$query}%"])
+            ->limit(10)
+            ->get();
+
+        $suggestions = $documents->map(function ($doc) {
+            return [
+                'id' => $doc->id,
+                'title' => $doc->title,
+                'document_number' => $doc->document_number,
+                'type' => $doc->type->name ?? '-',
+                'status' => $doc->status,
+                'url' => route('documents.show', $doc),
+            ];
+        });
+
+        return response()->json($suggestions);
+    }
+
+    /**
+     * Export documents to Excel
+     */
+    public function export(Request $request)
+    {
+        $filters = [
+            'search' => $request->input('search'),
+            'document_type_id' => $request->input('type_id'),
+            'document_category_id' => $request->input('category_id'),
+            'directorate_id' => $request->input('directorate_id'),
+            'unit_id' => $request->input('unit_id'),
+            'status' => $request->input('status'),
+            'is_distributed' => $request->input('is_distributed'),
+            'effective_date_from' => $request->input('effective_date_from'),
+            'effective_date_to' => $request->input('effective_date_to'),
+            'expiry_date_from' => $request->input('expiry_date_from'),
+            'expiry_date_to' => $request->input('expiry_date_to'),
+            'sort_by' => $request->input('sort_by', 'expiry_date'),
+            'sort_dir' => $request->input('sort_dir', 'asc'),
+        ];
+
+        // Log export activity
+        AuditLog::log(
+            'documents_exported',
+            AuditLog::MODULE_DOCUMENTS,
+            'Document',
+            null,
+            'Batch Export',
+            null,
+            ['filters' => array_filter($filters)],
+            'Dokumen diekspor ke Excel.'
+        );
+
+        $filename = 'dokumen_hukum_' . date('Y-m-d_His') . '.xlsx';
+
+        return (new \App\Exports\DocumentsExport($filters))->download($filename);
+    }
+
+    /**
+     * Export documents to PDF
+     */
+    public function exportPdf(Request $request)
+    {
+        $query = Document::with(['documentType', 'documentCategory', 'directorate', 'unit']);
+
+        // Apply filters
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                    ->orWhere('document_number', 'like', "%{$search}%")
+                    ->orWhere('keywords', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('type_id')) {
+            $query->where('document_type_id', $request->input('type_id'));
+        }
+
+        if ($request->filled('category_id')) {
+            $query->where('document_category_id', $request->input('category_id'));
+        }
+
+        if ($request->filled('directorate_id')) {
+            $query->where('directorate_id', $request->input('directorate_id'));
+        }
+
+        if ($request->filled('unit_id')) {
+            $query->where('unit_id', $request->input('unit_id'));
+        }
+
+        if ($request->filled('status')) {
+            $query->byStatus($request->input('status'));
+        }
+
+        // Date range filters
+        if ($request->filled('effective_date_from')) {
+            $query->where('effective_date', '>=', $request->input('effective_date_from'));
+        }
+
+        if ($request->filled('effective_date_to')) {
+            $query->where('effective_date', '<=', $request->input('effective_date_to'));
+        }
+
+        if ($request->filled('expiry_date_from')) {
+            $query->where('expiry_date', '>=', $request->input('expiry_date_from'));
+        }
+
+        if ($request->filled('expiry_date_to')) {
+            $query->where('expiry_date', '<=', $request->input('expiry_date_to'));
+        }
+
+        // Sort
+        $sortBy = $request->input('sort_by', 'expiry_date');
+        $sortDir = $request->input('sort_dir', 'asc');
+        $query->orderBy($sortBy, $sortDir);
+
+        // Get documents (limit to 500 for PDF)
+        $documents = $query->limit(500)->get();
+
+        // Build active filters array for display
+        $activeFilters = [];
+        if ($request->filled('search')) {
+            $activeFilters['Pencarian'] = $request->input('search');
+        }
+        if ($request->filled('type_id')) {
+            $type = DocumentType::find($request->input('type_id'));
+            $activeFilters['Jenis'] = $type?->name ?? '-';
+        }
+        if ($request->filled('directorate_id')) {
+            $dir = Directorate::find($request->input('directorate_id'));
+            $activeFilters['Direktorat'] = $dir?->name ?? '-';
+        }
+        if ($request->filled('status')) {
+            $activeFilters['Status'] = ucfirst($request->input('status'));
+        }
+
+        // Calculate summary
+        $now = now();
+        $summary = [
+            'total' => $documents->count(),
+            'active' => $documents->filter(fn($d) => $d->expiry_date && $d->expiry_date->gt($now->copy()->addMonths(6)))->count(),
+            'perpetual' => $documents->filter(fn($d) => !$d->expiry_date)->count(),
+            'expiring_soon' => $documents->filter(fn($d) => $d->expiry_date && $d->expiry_date->lte($now->copy()->addMonths(6)) && $d->expiry_date->gte($now))->count(),
+            'expired' => $documents->filter(fn($d) => $d->expiry_date && $d->expiry_date->lt($now))->count(),
+        ];
+
+        // Log export activity
+        AuditLog::log(
+            'documents_exported_pdf',
+            AuditLog::MODULE_DOCUMENTS,
+            'Document',
+            null,
+            'Batch Export PDF',
+            null,
+            ['filters' => array_filter($request->only(['search', 'type_id', 'status', 'directorate_id']))],
+            'Dokumen diekspor ke PDF.'
+        );
+
+        // Generate PDF
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('documents.pdf-export', [
+            'documents' => $documents,
+            'activeFilters' => $activeFilters,
+            'summary' => $summary,
+        ]);
+
+        // Set landscape orientation
+        $pdf->setPaper('A4', 'landscape');
+
+        $filename = 'dokumen_hukum_' . date('Y-m-d_His') . '.pdf';
+
+        return $pdf->download($filename);
     }
 
     /**
@@ -1088,5 +1341,268 @@ class DocumentController extends Controller
             'change_notes' => $changeNotes,
             'uploaded_by' => auth()->id(),
         ]);
+    }
+
+    /**
+     * Bulk archive documents
+     */
+    public function bulkArchive(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:documents,id',
+        ]);
+
+        $ids = $request->input('ids');
+        $user = auth()->user();
+
+        $archived = 0;
+        foreach ($ids as $id) {
+            $document = Document::find($id);
+            
+            if ($document && $document->status !== Document::STATUS_ARCHIVED) {
+                $document->update([
+                    'status' => Document::STATUS_ARCHIVED,
+                    'updated_by' => $user->id,
+                ]);
+
+                DocumentHistory::create([
+                    'document_id' => $document->id,
+                    'action' => DocumentHistory::ACTION_STATUS_CHANGED,
+                    'performed_by' => $user->id,
+                    'old_values' => ['status' => $document->getOriginal('status')],
+                    'new_values' => ['status' => Document::STATUS_ARCHIVED],
+                    'description' => 'Dokumen diarsipkan (bulk action).',
+                ]);
+
+                $archived++;
+            }
+        }
+
+        AuditLog::log(
+            'documents_bulk_archived',
+            AuditLog::MODULE_DOCUMENTS,
+            'Document',
+            null,
+            'Bulk Archive',
+            null,
+            ['count' => $archived, 'ids' => $ids],
+            "{$archived} dokumen berhasil diarsipkan."
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => "{$archived} dokumen berhasil diarsipkan.",
+        ]);
+    }
+
+    /**
+     * Bulk delete documents (soft delete)
+     */
+    public function bulkDelete(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:documents,id',
+        ]);
+
+        $ids = $request->input('ids');
+        $user = auth()->user();
+
+        $deleted = 0;
+        foreach ($ids as $id) {
+            $document = Document::find($id);
+            
+            if ($document) {
+                // Only allow deletion of drafts by non-admin
+                if (!$user->isAdmin() && $document->status !== Document::STATUS_DRAFT) {
+                    continue;
+                }
+
+                DocumentHistory::create([
+                    'document_id' => $document->id,
+                    'action' => DocumentHistory::ACTION_DELETED,
+                    'performed_by' => $user->id,
+                    'description' => 'Dokumen dihapus (bulk action).',
+                ]);
+
+                $document->delete();
+                $deleted++;
+            }
+        }
+
+        AuditLog::log(
+            'documents_bulk_deleted',
+            AuditLog::MODULE_DOCUMENTS,
+            'Document',
+            null,
+            'Bulk Delete',
+            null,
+            ['count' => $deleted, 'ids' => $ids],
+            "{$deleted} dokumen berhasil dihapus."
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => "{$deleted} dokumen berhasil dihapus.",
+        ]);
+    }
+
+    /**
+     * Compare two versions of a document
+     */
+    public function compareVersions(Document $document, DocumentVersion $version1, DocumentVersion $version2)
+    {
+        $user = auth()->user();
+        
+        // Check access
+        if (!$user->isAdmin() && !$document->isAccessibleBy($user)) {
+            abort(403, 'Anda tidak memiliki akses ke dokumen ini.');
+        }
+
+        // Ensure versions belong to this document
+        if ($version1->document_id !== $document->id || $version2->document_id !== $document->id) {
+            abort(404, 'Versi tidak ditemukan.');
+        }
+
+        // Order versions (older first)
+        if ($version1->version_number > $version2->version_number) {
+            [$version1, $version2] = [$version2, $version1];
+        }
+
+        // Load relations
+        $version1->load('uploader');
+        $version2->load('uploader');
+        $document->load('type', 'category');
+
+        // Get document history between versions
+        $history = DocumentHistory::where('document_id', $document->id)
+            ->whereBetween('created_at', [$version1->created_at, $version2->created_at])
+            ->with('performer')
+            ->orderBy('created_at')
+            ->get();
+
+        // Calculate metadata differences
+        $metadataDiff = $this->calculateVersionDiff($version1, $version2);
+
+        return view('documents.compare-versions', compact(
+            'document', 'version1', 'version2', 'history', 'metadataDiff'
+        ));
+    }
+
+    /**
+     * Calculate differences between two versions
+     */
+    protected function calculateVersionDiff(DocumentVersion $v1, DocumentVersion $v2): array
+    {
+        $diff = [];
+
+        // File changes
+        if ($v1->file_size !== $v2->file_size) {
+            $diff['file_size'] = [
+                'old' => $v1->file_size_formatted,
+                'new' => $v2->file_size_formatted,
+                'change' => $v2->file_size > $v1->file_size ? 'increased' : 'decreased',
+            ];
+        }
+
+        if ($v1->file_hash !== $v2->file_hash) {
+            $diff['file_content'] = [
+                'changed' => true,
+                'message' => 'Konten file berubah',
+            ];
+        }
+
+        if ($v1->original_filename !== $v2->original_filename) {
+            $diff['filename'] = [
+                'old' => $v1->original_filename,
+                'new' => $v2->original_filename,
+            ];
+        }
+
+        return $diff;
+    }
+
+    /**
+     * Restore a previous version (Admin only)
+     */
+    public function restoreVersion(Request $request, Document $document, DocumentVersion $version)
+    {
+        $user = auth()->user();
+
+        // Admin only
+        if (!$user->isAdmin()) {
+            abort(403, 'Hanya admin yang dapat mengembalikan versi.');
+        }
+
+        // Ensure version belongs to this document
+        if ($version->document_id !== $document->id) {
+            abort(404, 'Versi tidak ditemukan.');
+        }
+
+        // Cannot restore current version
+        if ($version->is_current) {
+            return back()->with('error', 'Versi ini sudah merupakan versi aktif.');
+        }
+
+        // Check if file exists
+        if (!$version->fileExists()) {
+            return back()->with('error', 'File versi ini tidak ditemukan.');
+        }
+
+        // Create new version from old version
+        $newVersionNumber = $document->current_version + 1;
+        
+        $newVersion = DocumentVersion::create([
+            'document_id' => $document->id,
+            'version_number' => $newVersionNumber,
+            'file_path' => $version->file_path,
+            'original_filename' => $version->original_filename,
+            'file_size' => $version->file_size,
+            'file_extension' => $version->file_extension,
+            'mime_type' => $version->mime_type,
+            'file_hash' => $version->file_hash,
+            'change_notes' => "Dipulihkan dari versi {$version->version_number}",
+            'uploaded_by' => $user->id,
+            'is_current' => true,
+        ]);
+
+        // Mark all other versions as not current
+        DocumentVersion::where('document_id', $document->id)
+            ->where('id', '!=', $newVersion->id)
+            ->update(['is_current' => false]);
+
+        // Update document
+        $document->update([
+            'current_version' => $newVersionNumber,
+            'updated_by' => $user->id,
+        ]);
+
+        // Log history
+        DocumentHistory::create([
+            'document_id' => $document->id,
+            'action' => DocumentHistory::ACTION_VERSION_RESTORED,
+            'performed_by' => $user->id,
+            'old_values' => ['version' => $document->current_version - 1],
+            'new_values' => ['version' => $newVersionNumber, 'restored_from' => $version->version_number],
+            'description' => "Versi {$version->version_number} dipulihkan sebagai versi {$newVersionNumber}.",
+        ]);
+
+        // Audit log
+        AuditLog::log(
+            'document_version_restored',
+            AuditLog::MODULE_DOCUMENTS,
+            'Document',
+            $document->id,
+            'Version Restored',
+            null,
+            [
+                'restored_from_version' => $version->version_number,
+                'new_version' => $newVersionNumber,
+            ],
+            "Versi {$version->version_number} dipulihkan sebagai versi {$newVersionNumber}."
+        );
+
+        return back()->with('success', "Versi {$version->version_number} berhasil dipulihkan sebagai versi {$newVersionNumber}.");
     }
 }

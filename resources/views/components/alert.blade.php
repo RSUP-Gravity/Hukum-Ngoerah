@@ -44,11 +44,13 @@
     x-transition:leave="transition ease-in duration-150"
     x-transition:leave-start="opacity-100 transform translate-y-0"
     x-transition:leave-end="opacity-0 transform -translate-y-2"
+    role="alert"
+    aria-live="{{ $type === 'error' ? 'assertive' : 'polite' }}"
     {{ $attributes->merge(['class' => "rounded-lg border p-4 {$config['bg']} {$config['border']}"]) }}
 >
     <div class="flex">
         <div class="flex-shrink-0">
-            <svg class="h-5 w-5 {{ $config['text'] }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="h-5 w-5 {{ $config['text'] }}" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 {!! $config['icon'] !!}
             </svg>
         </div>
@@ -65,9 +67,10 @@
                 <button 
                     @click="show = false"
                     class="-mx-1.5 -my-1.5 rounded-lg p-1.5 inline-flex {{ $config['text'] }} hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+                    aria-label="Dismiss alert"
                 >
                     <span class="sr-only">Dismiss</span>
-                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                     </svg>
                 </button>

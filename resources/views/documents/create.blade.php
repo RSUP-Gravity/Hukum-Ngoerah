@@ -267,6 +267,43 @@
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Unsaved Changes Warning
+    const form = document.getElementById('documentForm');
+    let formDirty = false;
+    let isSubmitting = false;
+    
+    // Track form changes
+    const formInputs = form.querySelectorAll('input, select, textarea');
+    formInputs.forEach(input => {
+        input.addEventListener('change', () => { formDirty = true; });
+        input.addEventListener('input', () => { formDirty = true; });
+    });
+    
+    // Reset dirty flag on form submit
+    form.addEventListener('submit', function() {
+        isSubmitting = true;
+    });
+    
+    // Warn user before leaving
+    window.addEventListener('beforeunload', function(e) {
+        if (formDirty && !isSubmitting) {
+            e.preventDefault();
+            e.returnValue = 'Anda memiliki perubahan yang belum disimpan. Yakin ingin meninggalkan halaman ini?';
+            return e.returnValue;
+        }
+    });
+    
+    // Intercept navigation links
+    document.querySelectorAll('a[href]').forEach(link => {
+        link.addEventListener('click', function(e) {
+            if (formDirty && !isSubmitting) {
+                if (!confirm('Anda memiliki perubahan yang belum disimpan. Yakin ingin meninggalkan halaman ini?')) {
+                    e.preventDefault();
+                }
+            }
+        });
+    });
+    
     // Dynamic category filtering
     const typeSelect = document.getElementById('document_type_id');
     const categorySelect = document.getElementById('document_category_id');
@@ -300,6 +337,7 @@ document.addEventListener('DOMContentLoaded', function() {
             fileName.textContent = file.name;
             fileSize.textContent = formatFileSize(file.size);
             filePreview.classList.remove('d-none');
+            formDirty = true; // Mark dirty when file selected
         } else {
             filePreview.classList.add('d-none');
         }
