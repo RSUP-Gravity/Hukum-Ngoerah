@@ -13,6 +13,16 @@ use Illuminate\Validation\Rule;
 class ProfileController extends Controller
 {
     /**
+     * Show the profile page
+     */
+    public function show()
+    {
+        $user = Auth::user()->load(['role', 'unit.directorate', 'position']);
+        
+        return view('profile.show', compact('user'));
+    }
+
+    /**
      * Show the profile edit form
      */
     public function edit()

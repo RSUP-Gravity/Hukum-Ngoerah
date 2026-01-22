@@ -63,6 +63,20 @@ class Document extends Model
     const STATUS_REJECTED = 'rejected';
 
     /**
+     * All statuses with labels
+     */
+    const STATUSES = [
+        'draft' => 'Draft',
+        'pending_review' => 'Menunggu Review',
+        'pending_approval' => 'Menunggu Persetujuan',
+        'approved' => 'Disetujui',
+        'published' => 'Dipublikasikan',
+        'expired' => 'Kadaluarsa',
+        'archived' => 'Diarsipkan',
+        'rejected' => 'Ditolak',
+    ];
+
+    /**
      * Confidentiality constants
      */
     const CONF_PUBLIC = 'public';
@@ -205,6 +219,14 @@ class Document extends Model
             return $query->whereIn('status', $status);
         }
         return $query->where('status', $status);
+    }
+
+    /**
+     * Scope: Filter by status (alias)
+     */
+    public function scopeByStatus($query, $status)
+    {
+        return $this->scopeStatus($query, $status);
     }
 
     /**

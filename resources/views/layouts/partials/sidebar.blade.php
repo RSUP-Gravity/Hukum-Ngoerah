@@ -84,8 +84,8 @@
 
                 <!-- Direktorat -->
                 <a 
-                    href="{{ route('directorates.index') }}" 
-                    class="sidebar-item {{ request()->routeIs('directorates.*') ? 'active' : '' }}"
+                    href="{{ route('master.directorates.index') }}" 
+                    class="sidebar-item {{ request()->routeIs('master.directorates.*') ? 'active' : '' }}"
                     title="Direktorat"
                 >
                     <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -101,8 +101,8 @@
 
                 <!-- Unit -->
                 <a 
-                    href="{{ route('units.index') }}" 
-                    class="sidebar-item {{ request()->routeIs('units.*') ? 'active' : '' }}"
+                    href="{{ route('master.units.index') }}" 
+                    class="sidebar-item {{ request()->routeIs('master.units.*') ? 'active' : '' }}"
                     title="Unit"
                 >
                     <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -118,8 +118,8 @@
 
                 <!-- Jenis Dokumen -->
                 <a 
-                    href="{{ route('document-types.index') }}" 
-                    class="sidebar-item {{ request()->routeIs('document-types.*') ? 'active' : '' }}"
+                    href="{{ route('master.document-types.index') }}" 
+                    class="sidebar-item {{ request()->routeIs('master.document-types.*') ? 'active' : '' }}"
                     title="Jenis Dokumen"
                 >
                     <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -135,8 +135,8 @@
 
                 <!-- Tipe Dokumen -->
                 <a 
-                    href="{{ route('document-categories.index') }}" 
-                    class="sidebar-item {{ request()->routeIs('document-categories.*') ? 'active' : '' }}"
+                    href="{{ route('master.document-categories.index') }}" 
+                    class="sidebar-item {{ request()->routeIs('master.document-categories.*') ? 'active' : '' }}"
                     title="Tipe Dokumen"
                 >
                     <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -164,8 +164,8 @@
 
                 <!-- Users -->
                 <a 
-                    href="{{ route('users.index') }}" 
-                    class="sidebar-item {{ request()->routeIs('users.*') ? 'active' : '' }}"
+                    href="{{ route('admin.users.index') }}" 
+                    class="sidebar-item {{ request()->routeIs('admin.users.*') ? 'active' : '' }}"
                     title="Pengguna"
                 >
                     <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -181,8 +181,8 @@
 
                 <!-- Audit Log -->
                 <a 
-                    href="{{ route('audit-logs.index') }}" 
-                    class="sidebar-item {{ request()->routeIs('audit-logs.*') ? 'active' : '' }}"
+                    href="{{ route('admin.audit-logs.index') }}" 
+                    class="sidebar-item {{ request()->routeIs('admin.audit-logs.*') ? 'active' : '' }}"
                     title="Audit Log"
                 >
                     <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">

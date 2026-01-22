@@ -1,7 +1,42 @@
 <!-- Command Palette (Cmd+K) -->
 <div 
-    x-data="commandPalette()"
+    x-data="{ 
+        open: false, 
+        query: '', 
+        toggle() { 
+            this.open = !this.open; 
+            if (this.open) { 
+                this.$nextTick(() => this.$refs.searchInput.focus()); 
+            } else { 
+                this.query = ''; 
+            } 
+        }, 
+        close() { 
+            this.open = false; 
+            this.query = ''; 
+        },
+        get filteredCommands() {
+            const commands = [
+                { label: 'Dashboard', icon: 'home', url: '{{ route('dashboard') }}', category: 'Navigasi' },
+                { label: 'Dokumen', icon: 'document', url: '{{ route('documents.index') }}', category: 'Navigasi' },
+                { label: 'Tambah Dokumen Baru', icon: 'plus', url: '{{ route('documents.create') }}', category: 'Aksi' },
+                @can('manage users')
+                { label: 'Manajemen Pengguna', icon: 'users', url: '{{ route('admin.users.index') }}', category: 'Admin' },
+                @endcan
+                @can('manage master data')
+                { label: 'Master Data - Direktorat', icon: 'building', url: '{{ route('master.directorates.index') }}', category: 'Master Data' },
+                { label: 'Master Data - Jabatan', icon: 'briefcase', url: '{{ route('master.positions.index') }}', category: 'Master Data' },
+                { label: 'Master Data - Jenis Dokumen', icon: 'folder', url: '{{ route('master.document-types.index') }}', category: 'Master Data' },
+                @endcan
+                { label: 'Profil Saya', icon: 'user', url: '{{ route('profile.show') }}', category: 'Akun' },
+                { label: 'Logout', icon: 'logout', url: '{{ route('logout') }}', category: 'Akun' }
+            ];
+            if (!this.query) return commands;
+            return commands.filter(c => c.label.toLowerCase().includes(this.query.toLowerCase()));
+        }
+    }"
     x-on:open-command-palette.window="toggle()"
+    @keydown.escape.window="if(open) close()"
     x-show="open"
     x-cloak
     class="fixed inset-0 z-[60] overflow-y-auto"
