@@ -12,100 +12,60 @@
 @endsection
 
 @section('content')
-<div class="container-fluid">
-    <div class="row justify-content-center">
-        <div class="col-lg-8">
-            {{-- Page Header --}}
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <div>
-                    <h1 class="h3 mb-1">Tambah Pengguna</h1>
-                    <p class="text-muted mb-0">Buat akun pengguna baru</p>
-                </div>
-                <a href="{{ route('admin.users.index') }}" class="btn btn-outline-secondary">
-                    <i class="bi bi-arrow-left me-2"></i>Kembali
-                </a>
-            </div>
+<div class="space-y-6">
+    {{-- Page Header --}}
+    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+            <h1 class="text-2xl font-semibold text-[var(--text-primary)]">Tambah Pengguna</h1>
+            <p class="mt-1 text-sm text-[var(--text-secondary)]">Buat akun pengguna baru</p>
+        </div>
+        <x-button href="{{ route('admin.users.index') }}" variant="secondary">
+            <i class="bi bi-arrow-left"></i>
+            Kembali
+        </x-button>
+    </div>
 
-            <form action="{{ route('admin.users.store') }}" method="POST">
-                @csrf
-                
-                <div class="glass-card mb-4">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0">
-                            <i class="bi bi-person me-2"></i>Informasi Pengguna
-                        </h5>
+    <form action="{{ route('admin.users.store') }}" method="POST">
+        @csrf
+
+        <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+            <div class="space-y-6 lg:col-span-2">
+                <x-glass-card :hover="false" class="p-6">
+                    <div class="flex items-center gap-2">
+                        <i class="bi bi-person text-primary-500"></i>
+                        <h2 class="text-lg font-semibold text-[var(--text-primary)]">Informasi Pengguna</h2>
                     </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="name" class="form-label">Nama Lengkap <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control @error('name') is-invalid @enderror" 
-                                       id="name" name="name" value="{{ old('name') }}" required>
-                                @error('name')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-                            
-                            <div class="col-md-6 mb-3">
-                                <label for="username" class="form-label">Username <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control @error('username') is-invalid @enderror" 
-                                       id="username" name="username" value="{{ old('username') }}" required>
-                                @error('username')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
+
+                    <div class="mt-5 space-y-4">
+                        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                            <x-input name="name" label="Nama Lengkap" :required="true" value="{{ old('name') }}" />
+                            <x-input name="username" label="Username" :required="true" value="{{ old('username') }}" />
                         </div>
-                        
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="email" class="form-label">Email</label>
-                                <input type="email" class="form-control @error('email') is-invalid @enderror" 
-                                       id="email" name="email" value="{{ old('email') }}">
-                                @error('email')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-                            
-                            <div class="col-md-6 mb-3">
-                                <label for="employee_id" class="form-label">NIP</label>
-                                <input type="text" class="form-control @error('employee_id') is-invalid @enderror" 
-                                       id="employee_id" name="employee_id" value="{{ old('employee_id') }}">
-                                @error('employee_id')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
+
+                        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                            <x-input type="email" name="email" label="Email" value="{{ old('email') }}" />
+                            <x-input name="employee_id" label="NIP" value="{{ old('employee_id') }}" />
                         </div>
-                        
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="phone" class="form-label">No. Telepon</label>
-                                <input type="text" class="form-control @error('phone') is-invalid @enderror" 
-                                       id="phone" name="phone" value="{{ old('phone') }}">
-                                @error('phone')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-                        </div>
-                        
-                        <div class="alert alert-info mb-0">
-                            <i class="bi bi-info-circle me-2"></i>
+
+                        <x-input name="phone" label="No. Telepon" value="{{ old('phone') }}" />
+
+                        <x-alert type="info" :dismissible="false">
                             Password akan digenerate otomatis dan ditampilkan setelah pengguna dibuat.
-                        </div>
+                        </x-alert>
                     </div>
-                </div>
-                
-                <div class="glass-card mb-4">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0">
-                            <i class="bi bi-building me-2"></i>Organisasi & Akses
-                        </h5>
+                </x-glass-card>
+
+                <x-glass-card :hover="false" class="p-6">
+                    <div class="flex items-center gap-2">
+                        <i class="bi bi-building text-primary-500"></i>
+                        <h2 class="text-lg font-semibold text-[var(--text-primary)]">Organisasi & Akses</h2>
                     </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="role_id" class="form-label">Role <span class="text-danger">*</span></label>
-                                <select class="form-select @error('role_id') is-invalid @enderror" 
-                                        id="role_id" name="role_id" required>
+
+                    <div class="mt-5 space-y-4">
+                        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                            <div class="space-y-1.5">
+                                <label for="role_id" class="block text-sm font-medium text-[var(--text-primary)]">Role <span class="text-red-500" aria-hidden="true">*</span></label>
+                                <select id="role_id" name="role_id" class="glass-input" required>
                                     <option value="">Pilih Role</option>
                                     @foreach($roles as $role)
                                         <option value="{{ $role->id }}" {{ old('role_id') == $role->id ? 'selected' : '' }}>
@@ -114,14 +74,13 @@
                                     @endforeach
                                 </select>
                                 @error('role_id')
-                                    <div class="invalid-feedback">{{ $message }}</div>
+                                    <p class="text-xs text-red-500">{{ $message }}</p>
                                 @enderror
                             </div>
-                            
-                            <div class="col-md-6 mb-3">
-                                <label for="unit_id" class="form-label">Unit</label>
-                                <select class="form-select @error('unit_id') is-invalid @enderror" 
-                                        id="unit_id" name="unit_id">
+
+                            <div class="space-y-1.5">
+                                <label for="unit_id" class="block text-sm font-medium text-[var(--text-primary)]">Unit</label>
+                                <select id="unit_id" name="unit_id" class="glass-input">
                                     <option value="">Pilih Unit</option>
                                     @foreach($units as $unit)
                                         <option value="{{ $unit->id }}" {{ old('unit_id') == $unit->id ? 'selected' : '' }}>
@@ -130,16 +89,15 @@
                                     @endforeach
                                 </select>
                                 @error('unit_id')
-                                    <div class="invalid-feedback">{{ $message }}</div>
+                                    <p class="text-xs text-red-500">{{ $message }}</p>
                                 @enderror
                             </div>
                         </div>
-                        
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="position_id" class="form-label">Jabatan</label>
-                                <select class="form-select @error('position_id') is-invalid @enderror" 
-                                        id="position_id" name="position_id">
+
+                        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                            <div class="space-y-1.5">
+                                <label for="position_id" class="block text-sm font-medium text-[var(--text-primary)]">Jabatan</label>
+                                <select id="position_id" name="position_id" class="glass-input">
                                     <option value="">Pilih Jabatan</option>
                                     @foreach($positions as $position)
                                         <option value="{{ $position->id }}" {{ old('position_id') == $position->id ? 'selected' : '' }}>
@@ -148,30 +106,37 @@
                                     @endforeach
                                 </select>
                                 @error('position_id')
-                                    <div class="invalid-feedback">{{ $message }}</div>
+                                    <p class="text-xs text-red-500">{{ $message }}</p>
                                 @enderror
                             </div>
-                            
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Status</label>
-                                <div class="form-check form-switch mt-2">
-                                    <input class="form-check-input" type="checkbox" id="is_active" name="is_active" value="1"
+
+                            <div class="space-y-1.5">
+                                <label class="block text-sm font-medium text-[var(--text-primary)]">Status</label>
+                                <label class="mt-2 inline-flex items-center gap-2 text-sm text-[var(--text-secondary)]">
+                                    <input class="h-4 w-4 rounded border-[var(--surface-glass-border)] text-primary-500 focus:ring-primary-500" type="checkbox" id="is_active" name="is_active" value="1"
                                            {{ old('is_active', true) ? 'checked' : '' }}>
-                                    <label class="form-check-label" for="is_active">Aktif</label>
-                                </div>
+                                    Aktif
+                                </label>
                             </div>
                         </div>
                     </div>
-                </div>
-                
-                <div class="d-flex justify-content-end gap-2">
-                    <a href="{{ route('admin.users.index') }}" class="btn btn-outline-secondary">Batal</a>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="bi bi-check-lg me-2"></i>Simpan
-                    </button>
-                </div>
-            </form>
+                </x-glass-card>
+            </div>
+
+            <div class="space-y-4">
+                <x-glass-card :hover="false" class="p-6">
+                    <div class="space-y-2">
+                        <x-button type="submit" class="w-full">
+                            <i class="bi bi-check-lg"></i>
+                            Simpan
+                        </x-button>
+                        <x-button href="{{ route('admin.users.index') }}" variant="ghost" class="w-full">
+                            Batal
+                        </x-button>
+                    </div>
+                </x-glass-card>
+            </div>
         </div>
-    </div>
+    </form>
 </div>
 @endsection

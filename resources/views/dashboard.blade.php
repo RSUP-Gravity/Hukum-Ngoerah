@@ -62,8 +62,9 @@
                     <div class="space-y-3">
                         @foreach($criticalDocuments as $doc)
                         @php
-                            $isExpired = $doc->expiry_date && $doc->expiry_date->isPast();
-                            $daysLeft = $doc->expiry_date ? now()->diffInDays($doc->expiry_date, false) : null;
+                            $expiryInfo = app(\App\Services\DocumentStatusService::class)->getExpiryInfo($doc);
+                            $isExpired = $expiryInfo['is_expired'];
+                            $badgeLabel = $isExpired ? 'Kedaluwarsa' : 'Kritis';
                         @endphp
                         <a href="{{ route('documents.show', $doc) }}" 
                            class="block p-3 rounded-lg border transition-all hover:shadow-md
@@ -81,27 +82,17 @@
                                     </p>
                                 </div>
                                 <div class="flex-shrink-0 text-right">
-                                    @if($isExpired)
-                                        <span class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300">
-                                            <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
-                                            </svg>
-                                            Kadaluarsa
-                                        </span>
-                                        <p class="text-xs text-red-600 dark:text-red-400 mt-1">
-                                            {{ abs($daysLeft) }} hari lalu
-                                        </p>
-                                    @else
-                                        <span class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full bg-orange-100 text-orange-700 dark:bg-orange-900/50 dark:text-orange-300">
-                                            <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
-                                            </svg>
-                                            Segera
-                                        </span>
-                                        <p class="text-xs text-orange-600 dark:text-orange-400 mt-1">
-                                            {{ $daysLeft }} hari lagi
-                                        </p>
-                                    @endif
+                                    <x-badge :type="$expiryInfo['status']" size="sm">
+                                        @if($isExpired)
+                                            <i class="bi bi-x-circle"></i>
+                                        @else
+                                            <i class="bi bi-exclamation-triangle"></i>
+                                        @endif
+                                        {{ $badgeLabel }}
+                                    </x-badge>
+                                    <p class="mt-1 text-xs {{ $isExpired ? 'text-rose-400' : 'text-amber-400' }}">
+                                        {{ $expiryInfo['days_text'] }}
+                                    </p>
                                 </div>
                             </div>
                         </a>
@@ -110,7 +101,7 @@
                 </div>
                 
                 {{-- Footer Actions --}}
-                <div class="bg-[var(--surface-elevated)] px-6 py-4 border-t border-[var(--surface-glass-border)] flex flex-col sm:flex-row gap-3 sm:justify-between">
+                <div class="bg-[var(--surface-glass-elevated)] px-6 py-4 border-t border-[var(--surface-glass-border)] flex flex-col sm:flex-row gap-3 sm:justify-between">
                     <a href="{{ route('documents.index', ['status' => 'expiring']) }}" 
                        class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg text-white bg-gradient-to-r from-primary-500 to-lime-500 hover:from-primary-600 hover:to-lime-600 transition-all">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -119,7 +110,7 @@
                         Lihat Semua Dokumen Kritis
                     </a>
                     <button @click="open = false" type="button"
-                            class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg text-[var(--text-secondary)] bg-[var(--surface-glass)] hover:bg-[var(--surface-elevated)] border border-[var(--surface-glass-border)] transition-all">
+                            class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg text-[var(--text-secondary)] bg-[var(--surface-glass)] hover:bg-[var(--surface-glass-elevated)] border border-[var(--surface-glass-border)] transition-all">
                         Tutup & Lanjutkan
                     </button>
                 </div>
@@ -129,7 +120,7 @@
     @endif
 
     <!-- Quick Actions Widget -->
-    <div class="mb-8">
+    <div class="mt-8 mb-8">
         <x-glass-card :hover="false">
             <div class="flex items-center justify-between mb-4">
                 <h3 class="text-lg font-semibold text-[var(--text-primary)]">
@@ -304,36 +295,55 @@
         </x-glass-card>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-        <!-- Chart: Dokumen per Jenis -->
-        <x-glass-card :hover="false">
-            <div class="flex items-center justify-between mb-4">
-                <h3 class="text-lg font-semibold text-[var(--text-primary)]">Per Jenis Dokumen</h3>
+    <div x-data="{ showBreakdown: false }" class="mb-6">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
+            <div>
+                <h3 class="text-lg font-semibold text-[var(--text-primary)]">Breakdown Dokumen</h3>
+                <p class="text-sm text-[var(--text-tertiary)]">Detail per jenis, tipe, dan direktorat</p>
             </div>
-            <div class="h-56">
-                <canvas id="chartJenisDokumen"></canvas>
-            </div>
-        </x-glass-card>
+            <button
+                type="button"
+                @click="showBreakdown = !showBreakdown"
+                class="inline-flex items-center gap-2 rounded-lg border border-[var(--surface-glass-border)] bg-[var(--surface-glass)] px-4 py-2 text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--surface-glass-border-hover)] transition"
+            >
+                <span x-text="showBreakdown ? 'Sembunyikan' : 'Lihat breakdown'"></span>
+                <svg class="w-4 h-4 transition-transform" :class="showBreakdown ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                </svg>
+            </button>
+        </div>
 
-        <!-- Chart: Dokumen per Tipe -->
-        <x-glass-card :hover="false">
-            <div class="flex items-center justify-between mb-4">
-                <h3 class="text-lg font-semibold text-[var(--text-primary)]">Per Tipe Dokumen</h3>
-            </div>
-            <div class="h-56">
-                <canvas id="chartTipeDokumen"></canvas>
-            </div>
-        </x-glass-card>
+        <div x-show="showBreakdown" x-transition x-cloak class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Chart: Dokumen per Jenis -->
+            <x-glass-card :hover="false">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold text-[var(--text-primary)]">Per Jenis Dokumen</h3>
+                </div>
+                <div class="h-56">
+                    <canvas id="chartJenisDokumen"></canvas>
+                </div>
+            </x-glass-card>
 
-        <!-- Chart: Dokumen per Direktorat -->
-        <x-glass-card :hover="false">
-            <div class="flex items-center justify-between mb-4">
-                <h3 class="text-lg font-semibold text-[var(--text-primary)]">Per Direktorat</h3>
-            </div>
-            <div class="h-56">
-                <canvas id="chartDirektorat"></canvas>
-            </div>
-        </x-glass-card>
+            <!-- Chart: Dokumen per Tipe -->
+            <x-glass-card :hover="false">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold text-[var(--text-primary)]">Per Tipe Dokumen</h3>
+                </div>
+                <div class="h-56">
+                    <canvas id="chartTipeDokumen"></canvas>
+                </div>
+            </x-glass-card>
+
+            <!-- Chart: Dokumen per Direktorat -->
+            <x-glass-card :hover="false">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold text-[var(--text-primary)]">Per Direktorat</h3>
+                </div>
+                <div class="h-56">
+                    <canvas id="chartDirektorat"></canvas>
+                </div>
+            </x-glass-card>
+        </div>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
@@ -348,7 +358,7 @@
         </x-glass-card>
 
         <!-- Chart: Timeline Kadaluarsa -->
-        <x-glass-card :hover="false">
+        <x-glass-card :hover="false" class="border border-amber-200/70 dark:border-amber-400/30">
             <div class="flex items-center justify-between mb-4">
                 <h3 class="text-lg font-semibold text-[var(--text-primary)]">Jadwal Kadaluarsa</h3>
             </div>
@@ -358,7 +368,7 @@
         </x-glass-card>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         <!-- Dokumen Segera Kadaluarsa -->
         <x-glass-card :hover="false">
             <div class="flex items-center justify-between mb-6">
@@ -369,6 +379,13 @@
             </div>
             <div class="space-y-4 max-h-80 overflow-y-auto custom-scrollbar">
                 @forelse($expiringDocuments ?? [] as $doc)
+                    @php
+                        $expiryInfo = app(\App\Services\DocumentStatusService::class)->getExpiryInfo($doc);
+                        $days = $expiryInfo['days'];
+                        $badgeText = $days === null
+                            ? 'Tanpa batas'
+                            : ($days < 0 ? abs($days) . ' hari lalu' : $days . ' hari');
+                    @endphp
                     <a 
                         href="{{ route('documents.show', $doc) }}"
                         class="block p-3 rounded-lg border border-[var(--surface-glass-border)] hover:border-[var(--color-primary)] hover:bg-[var(--surface-glass)] transition-all"
@@ -378,8 +395,8 @@
                                 <p class="text-sm font-medium text-[var(--text-primary)] truncate">{{ $doc->title }}</p>
                                 <p class="text-xs text-[var(--text-tertiary)] mt-1">{{ $doc->document_number }}</p>
                             </div>
-                            <x-badge :type="$doc->status">
-                                {{ $doc->days_until_expiry }} hari
+                            <x-badge :type="$expiryInfo['status']">
+                                {{ $badgeText }}
                             </x-badge>
                         </div>
                     </a>
@@ -495,7 +512,7 @@
                         <div class="absolute left-2 top-1 w-4 h-4 rounded-full {{ $dotColor }} ring-4 ring-[var(--surface-glass)] shadow-lg transform group-hover:scale-110 transition-transform"></div>
                         
                         <!-- Activity Card -->
-                        <div class="p-3 rounded-lg border border-[var(--surface-glass-border)] bg-[var(--surface-glass)] hover:bg-[var(--surface-elevated)] transition-all">
+                        <div class="p-3 rounded-lg border border-[var(--surface-glass-border)] bg-[var(--surface-glass)] hover:bg-[var(--surface-glass-elevated)] transition-all">
                             <div class="flex items-start justify-between gap-2">
                                 <div class="flex items-center gap-2 min-w-0">
                                     <div class="w-8 h-8 rounded-lg {{ $dotColor }}/10 flex items-center justify-center flex-shrink-0">
@@ -656,25 +673,25 @@
                 });
             }
 
-            // Chart: Tipe Dokumen (Doughnut)
+            // Chart: Tipe Dokumen (Bar Horizontal)
             const ctxTipe = document.getElementById('chartTipeDokumen');
             if (ctxTipe) {
                 const byCategoryData = @json($chartData['by_category'] ?? []);
                 chartInstances.tipe = new Chart(ctxTipe, {
-                    type: 'doughnut',
+                    type: 'bar',
                     data: {
                         labels: byCategoryData.map(item => item.name),
                         datasets: [{
                             data: byCategoryData.map(item => item.total),
-                            backgroundColor: themeColors.chartColors.slice(0, byCategoryData.length).reverse(),
-                            borderWidth: isDarkMode() ? 2 : 1,
-                            borderColor: isDarkMode() ? 'rgba(15, 23, 42, 0.9)' : 'rgba(255, 255, 255, 0.9)',
-                            hoverOffset: 8
+                            backgroundColor: themeColors.chartColors.slice(0, byCategoryData.length),
+                            borderRadius: 6,
+                            borderSkipped: false
                         }]
                     },
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
+                        indexAxis: 'y',
                         onClick: (event, elements) => {
                             if (elements.length > 0) {
                                 const index = elements[0].index;
@@ -685,16 +702,7 @@
                             }
                         },
                         plugins: {
-                            legend: {
-                                position: 'right',
-                                labels: { 
-                                    padding: 12, 
-                                    usePointStyle: true,
-                                    pointStyle: 'circle',
-                                    font: { size: 11, weight: '500' },
-                                    color: themeColors.textColor
-                                }
-                            },
+                            legend: { display: false },
                             tooltip: {
                                 callbacks: {
                                     afterLabel: () => 'Klik untuk filter'
@@ -703,10 +711,26 @@
                                 boxPadding: 6
                             }
                         },
-                        cutout: '55%',
-                        animation: {
-                            animateRotate: true,
-                            animateScale: true
+                        scales: {
+                            x: { 
+                                grid: { 
+                                    color: themeColors.gridColor,
+                                    drawBorder: false
+                                },
+                                ticks: { 
+                                    color: themeColors.textSecondary,
+                                    font: { size: 11 }
+                                },
+                                border: { display: false }
+                            },
+                            y: { 
+                                grid: { display: false },
+                                ticks: { 
+                                    color: themeColors.textColor,
+                                    font: { size: 11, weight: '500' }
+                                },
+                                border: { display: false }
+                            }
                         }
                     }
                 });

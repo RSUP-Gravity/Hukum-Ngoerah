@@ -11,199 +11,175 @@
 @endsection
 
 @section('content')
-<div class="container-fluid">
+<div class="space-y-6">
     {{-- Page Header --}}
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-            <h1 class="h3 mb-1">Audit Log</h1>
-            <p class="text-muted mb-0">Riwayat aktivitas sistem</p>
+            <h1 class="text-2xl font-semibold text-[var(--text-primary)]">Audit Log</h1>
+            <p class="mt-1 text-sm text-[var(--text-secondary)]">Riwayat aktivitas sistem</p>
         </div>
-        <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#exportModal">
-            <i class="bi bi-download me-2"></i>Export
-        </button>
+        <x-button type="button" variant="secondary" @click="$dispatch('open-modal', 'exportAuditLogModal')">
+            <i class="bi bi-download"></i>
+            Export
+        </x-button>
     </div>
 
     {{-- Filters --}}
-    <div class="glass-card mb-4">
-        <div class="card-body">
-            <form action="{{ route('admin.audit-logs.index') }}" method="GET">
-                <div class="row g-3">
-                    <div class="col-md-3">
-                        <label class="form-label">Pencarian</label>
-                        <input type="text" class="form-control" name="search" 
-                               value="{{ request('search') }}" placeholder="Cari aktivitas...">
-                    </div>
-                    
-                    <div class="col-md-2">
-                        <label class="form-label">Modul</label>
-                        <select name="module" class="form-select">
-                            <option value="">Semua Modul</option>
-                            @foreach($modules as $module)
-                                <option value="{{ $module }}" {{ request('module') === $module ? 'selected' : '' }}>
-                                    {{ ucfirst($module) }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-                    
-                    <div class="col-md-2">
-                        <label class="form-label">Aksi</label>
-                        <select name="action" class="form-select">
-                            <option value="">Semua Aksi</option>
-                            @foreach($actions as $action)
-                                <option value="{{ $action }}" {{ request('action') === $action ? 'selected' : '' }}>
-                                    {{ ucfirst($action) }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-                    
-                    <div class="col-md-2">
-                        <label class="form-label">Dari Tanggal</label>
-                        <input type="date" class="form-control" name="date_from" value="{{ request('date_from') }}">
-                    </div>
-                    
-                    <div class="col-md-2">
-                        <label class="form-label">Sampai Tanggal</label>
-                        <input type="date" class="form-control" name="date_to" value="{{ request('date_to') }}">
-                    </div>
-                    
-                    <div class="col-md-1 d-flex align-items-end">
-                        <button type="submit" class="btn btn-primary me-1">
-                            <i class="bi bi-funnel"></i>
-                        </button>
-                        <a href="{{ route('admin.audit-logs.index') }}" class="btn btn-outline-secondary">
-                            <i class="bi bi-x-lg"></i>
-                        </a>
-                    </div>
+    <x-glass-card :hover="false" class="p-6">
+        <form action="{{ route('admin.audit-logs.index') }}" method="GET" class="grid grid-cols-1 gap-4 lg:grid-cols-12">
+            <div class="lg:col-span-3">
+                <label class="text-sm font-medium text-[var(--text-primary)]">Pencarian</label>
+                <div class="relative mt-2">
+                    <i class="bi bi-search absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)]"></i>
+                    <input type="text" class="glass-input pl-10" name="search"
+                           value="{{ request('search') }}" placeholder="Cari aktivitas...">
                 </div>
-            </form>
-        </div>
-    </div>
+            </div>
+
+            <div class="lg:col-span-2">
+                <label class="text-sm font-medium text-[var(--text-primary)]">Modul</label>
+                <select name="module" class="glass-input mt-2">
+                    <option value="">Semua Modul</option>
+                    @foreach($modules as $module)
+                        <option value="{{ $module }}" {{ request('module') === $module ? 'selected' : '' }}>
+                            {{ ucfirst($module) }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div class="lg:col-span-2">
+                <label class="text-sm font-medium text-[var(--text-primary)]">Aksi</label>
+                <select name="action" class="glass-input mt-2">
+                    <option value="">Semua Aksi</option>
+                    @foreach($actions as $action)
+                        <option value="{{ $action }}" {{ request('action') === $action ? 'selected' : '' }}>
+                            {{ ucfirst($action) }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div class="lg:col-span-2">
+                <label class="text-sm font-medium text-[var(--text-primary)]">Dari Tanggal</label>
+                <input type="date" class="glass-input mt-2" name="date_from" value="{{ request('date_from') }}">
+            </div>
+
+            <div class="lg:col-span-2">
+                <label class="text-sm font-medium text-[var(--text-primary)]">Sampai Tanggal</label>
+                <input type="date" class="glass-input mt-2" name="date_to" value="{{ request('date_to') }}">
+            </div>
+
+            <div class="lg:col-span-1 flex items-end gap-2">
+                <x-button type="submit" size="sm">
+                    <i class="bi bi-funnel"></i>
+                </x-button>
+                <x-button href="{{ route('admin.audit-logs.index') }}" size="sm" variant="secondary">
+                    <i class="bi bi-x-lg"></i>
+                </x-button>
+            </div>
+        </form>
+    </x-glass-card>
 
     {{-- Logs Table --}}
-    <div class="glass-card">
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover mb-0">
-                    <thead>
-                        <tr>
-                            <th>Waktu</th>
-                            <th>Pengguna</th>
-                            <th>Aksi</th>
-                            <th>Modul</th>
-                            <th>Entity</th>
-                            <th>Deskripsi</th>
-                            <th>IP</th>
-                            <th class="text-end">Detail</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($logs as $log)
-                        <tr>
-                            <td>
-                                <span title="{{ $log->created_at->format('d/m/Y H:i:s') }}">
-                                    {{ $log->created_at->diffForHumans() }}
-                                </span>
-                            </td>
-                            <td>
-                                @if($log->user)
-                                    <a href="{{ route('admin.users.show', $log->user) }}" class="text-decoration-none">
-                                        {{ $log->user->name }}
-                                    </a>
-                                @else
-                                    <span class="text-muted">{{ $log->username ?? 'System' }}</span>
-                                @endif
-                            </td>
-                            <td>
-                                @php
-                                    $actionColors = [
-                                        'created' => 'success',
-                                        'updated' => 'info',
-                                        'deleted' => 'danger',
-                                        'login' => 'primary',
-                                        'logout' => 'secondary',
-                                        'approved' => 'success',
-                                        'rejected' => 'danger',
-                                    ];
-                                @endphp
-                                <span class="badge bg-{{ $actionColors[$log->action] ?? 'secondary' }}">
-                                    {{ strtoupper($log->action) }}
-                                </span>
-                            </td>
-                            <td>{{ ucfirst($log->module) }}</td>
-                            <td>{{ Str::limit($log->entity_name, 30) ?? '-' }}</td>
-                            <td>{{ Str::limit($log->description, 40) ?? '-' }}</td>
-                            <td>
-                                <code class="small">{{ $log->ip_address ?? '-' }}</code>
-                            </td>
-                            <td class="text-end">
-                                <a href="{{ route('admin.audit-logs.show', $log) }}" class="btn btn-sm btn-outline-secondary">
-                                    <i class="bi bi-eye"></i>
-                                </a>
-                            </td>
-                        </tr>
-                        @empty
-                        <tr>
-                            <td colspan="8" class="text-center py-5">
-                                <div class="text-muted">
-                                    <i class="bi bi-journal-text fs-1 d-block mb-3 opacity-25"></i>
-                                    <p class="mb-0">Tidak ada log ditemukan.</p>
-                                </div>
-                            </td>
-                        </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-        </div>
-        
+    <x-table>
+        <x-slot name="header">
+            <th>Waktu</th>
+            <th>Pengguna</th>
+            <th>Aksi</th>
+            <th>Modul</th>
+            <th>Entity</th>
+            <th>Deskripsi</th>
+            <th>IP</th>
+            <th class="text-right">Detail</th>
+        </x-slot>
+
+        @forelse($logs as $log)
+            <tr>
+                <td class="text-sm text-[var(--text-secondary)]">
+                    <span title="{{ $log->created_at->format('d/m/Y H:i:s') }}">
+                        {{ $log->created_at->diffForHumans() }}
+                    </span>
+                </td>
+                <td class="text-sm">
+                    @if($log->user)
+                        <a href="{{ route('admin.users.show', $log->user) }}" class="text-[var(--text-primary)] hover:text-primary-400">
+                            {{ $log->user->name }}
+                        </a>
+                    @else
+                        <span class="text-[var(--text-tertiary)]">{{ $log->username ?? 'System' }}</span>
+                    @endif
+                </td>
+                <td>
+                    @php
+                        $actionColors = [
+                            'created' => 'success',
+                            'updated' => 'info',
+                            'deleted' => 'critical',
+                            'login' => 'info',
+                            'logout' => 'default',
+                            'approved' => 'success',
+                            'rejected' => 'critical',
+                        ];
+                    @endphp
+                    <x-badge :type="$actionColors[$log->action] ?? 'default'" size="sm">
+                        {{ strtoupper($log->action) }}
+                    </x-badge>
+                </td>
+                <td class="text-sm text-[var(--text-primary)]">{{ ucfirst($log->module) }}</td>
+                <td class="text-sm text-[var(--text-primary)]">{{ Str::limit($log->entity_name, 30) ?? '-' }}</td>
+                <td class="text-sm text-[var(--text-secondary)]">{{ Str::limit($log->description, 40) ?? '-' }}</td>
+                <td class="text-xs font-mono text-[var(--text-tertiary)]">{{ $log->ip_address ?? '-' }}</td>
+                <td class="text-right">
+                    <x-button href="{{ route('admin.audit-logs.show', $log) }}" size="sm" variant="secondary">
+                        <i class="bi bi-eye"></i>
+                    </x-button>
+                </td>
+            </tr>
+        @empty
+            <tr>
+                <td colspan="8" class="py-10 text-center">
+                    <div class="space-y-3 text-[var(--text-tertiary)]">
+                        <i class="bi bi-journal-text text-3xl opacity-40"></i>
+                        <p class="text-sm">Tidak ada log ditemukan.</p>
+                    </div>
+                </td>
+            </tr>
+        @endforelse
+
         @if($logs->hasPages())
-        <div class="card-footer bg-transparent">
-            {{ $logs->withQueryString()->links() }}
-        </div>
+            <x-slot name="pagination">
+                {{ $logs->withQueryString()->links() }}
+            </x-slot>
         @endif
-    </div>
+    </x-table>
 </div>
 
 {{-- Export Modal --}}
-<div class="modal fade" id="exportModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <form action="{{ route('admin.audit-logs.export') }}" method="GET">
-                <div class="modal-header">
-                    <h5 class="modal-title">Export Audit Log</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label">Dari Tanggal <span class="text-danger">*</span></label>
-                        <input type="date" class="form-control" name="date_from" required
-                               value="{{ date('Y-m-01') }}">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Sampai Tanggal <span class="text-danger">*</span></label>
-                        <input type="date" class="form-control" name="date_to" required
-                               value="{{ date('Y-m-d') }}">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Modul</label>
-                        <select name="module" class="form-select">
-                            <option value="">Semua Modul</option>
-                            @foreach($modules as $module)
-                                <option value="{{ $module }}">{{ ucfirst($module) }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="bi bi-download me-1"></i>Export CSV
-                    </button>
-                </div>
-            </form>
+<x-modal name="exportAuditLogModal" maxWidth="lg">
+    <x-slot name="header">
+        <h3 class="text-lg font-semibold text-[var(--text-primary)]">Export Audit Log</h3>
+    </x-slot>
+
+    <form action="{{ route('admin.audit-logs.export') }}" method="GET" class="space-y-4">
+        <x-input type="date" name="date_from" label="Dari Tanggal" :required="true" value="{{ date('Y-m-01') }}" />
+        <x-input type="date" name="date_to" label="Sampai Tanggal" :required="true" value="{{ date('Y-m-d') }}" />
+        <div class="space-y-1.5">
+            <label class="block text-sm font-medium text-[var(--text-primary)]">Modul</label>
+            <select name="module" class="glass-input">
+                <option value="">Semua Modul</option>
+                @foreach($modules as $module)
+                    <option value="{{ $module }}">{{ ucfirst($module) }}</option>
+                @endforeach
+            </select>
         </div>
-    </div>
-</div>
+        <div class="flex flex-col-reverse gap-2 border-t border-[var(--surface-glass-border)] pt-4 sm:flex-row sm:justify-end">
+            <x-button type="button" variant="secondary" x-on:click="$dispatch('close-modal', 'exportAuditLogModal')">Batal</x-button>
+            <x-button type="submit">
+                <i class="bi bi-download"></i>
+                Export CSV
+            </x-button>
+        </div>
+    </form>
+</x-modal>
 @endsection

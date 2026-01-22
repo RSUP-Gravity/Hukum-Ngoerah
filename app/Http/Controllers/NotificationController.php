@@ -16,8 +16,13 @@ class NotificationController extends Controller
         $query = Auth::user()->notifications()->orderBy('created_at', 'desc');
         
         // Filter by read status
-        if ($request->has('unread')) {
-            $query->where('is_read', false);
+        if ($request->filled('filter')) {
+            if ($request->filter === 'unread') {
+                $query->where('is_read', false);
+            }
+            if ($request->filter === 'read') {
+                $query->where('is_read', true);
+            }
         }
         
         // Filter by type
@@ -26,6 +31,7 @@ class NotificationController extends Controller
         }
 
         $notifications = $query->paginate(20);
+        $unreadCount = Auth::user()->notifications()->where('is_read', false)->count();
         
         // For AJAX requests, return JSON
         if ($request->ajax()) {
@@ -35,7 +41,7 @@ class NotificationController extends Controller
             ]);
         }
 
-        return view('notifications.index', compact('notifications'));
+        return view('notifications.index', compact('notifications', 'unreadCount'));
     }
 
     /**

@@ -11,212 +11,170 @@
 @endsection
 
 @section('content')
-<div class="container-fluid">
+<div class="space-y-6">
     {{-- Page Header --}}
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-            <h1 class="h3 mb-1">Jabatan</h1>
-            <p class="text-muted mb-0">Kelola data jabatan organisasi</p>
+            <h1 class="text-2xl font-semibold text-[var(--text-primary)]">Jabatan</h1>
+            <p class="mt-1 text-sm text-[var(--text-secondary)]">Kelola data jabatan organisasi</p>
         </div>
         @can('master.create')
-        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createModal">
-            <i class="bi bi-plus-lg me-2"></i>Tambah Jabatan
-        </button>
+            <x-button type="button" @click="$dispatch('open-modal', 'createPositionModal')">
+                <i class="bi bi-plus-lg"></i>
+                Tambah Jabatan
+            </x-button>
         @endcan
     </div>
 
     {{-- Table --}}
-    <div class="glass-card">
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover mb-0">
-                    <thead>
-                        <tr>
-                            <th>Kode</th>
-                            <th>Nama Jabatan</th>
-                            <th>Level</th>
-                            <th>Dapat Approve</th>
-                            <th>Status</th>
-                            <th class="text-end">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($positions as $position)
-                        <tr>
-                            <td><code>{{ $position->code }}</code></td>
-                            <td>
-                                <div class="fw-medium">{{ $position->name }}</div>
-                                @if($position->description)
-                                    <small class="text-muted">{{ Str::limit($position->description, 50) }}</small>
-                                @endif
-                            </td>
-                            <td>
-                                <span class="badge bg-light text-dark">Level {{ $position->level }}</span>
-                            </td>
-                            <td>
-                                @if($position->can_approve_documents)
-                                    <span class="badge bg-success"><i class="bi bi-check"></i> Ya</span>
-                                @else
-                                    <span class="badge bg-secondary">Tidak</span>
-                                @endif
-                            </td>
-                            <td>
-                                @if($position->is_active)
-                                    <span class="badge bg-success">Aktif</span>
-                                @else
-                                    <span class="badge bg-danger">Nonaktif</span>
-                                @endif
-                            </td>
-                            <td class="text-end">
-                                <div class="btn-group btn-group-sm">
-                                    @can('master.edit')
-                                    <button type="button" class="btn btn-outline-primary" 
-                                            onclick="editItem({{ json_encode($position) }})">
-                                        <i class="bi bi-pencil"></i>
-                                    </button>
-                                    @endcan
-                                    @can('master.delete')
-                                    <form action="{{ route('master.positions.destroy', $position) }}" method="POST" class="d-inline"
-                                          onsubmit="return confirm('Yakin ingin menghapus?')">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="btn btn-outline-danger">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
-                                    </form>
-                                    @endcan
-                                </div>
-                            </td>
-                        </tr>
-                        @empty
-                        <tr>
-                            <td colspan="6" class="text-center py-5">
-                                <div class="text-muted">
-                                    <i class="bi bi-person-badge fs-1 d-block mb-3 opacity-25"></i>
-                                    <p class="mb-0">Tidak ada data jabatan.</p>
-                                </div>
-                            </td>
-                        </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-        </div>
+    <x-table>
+        <x-slot name="header">
+            <th>Kode</th>
+            <th>Nama Jabatan</th>
+            <th>Level</th>
+            <th>Dapat Approve</th>
+            <th>Status</th>
+            <th class="text-right">Aksi</th>
+        </x-slot>
+
+        @forelse($positions as $position)
+            <tr>
+                <td class="text-xs font-mono text-[var(--text-tertiary)]">{{ $position->code }}</td>
+                <td>
+                    <div class="text-sm font-semibold text-[var(--text-primary)]">{{ $position->name }}</div>
+                    @if($position->description)
+                        <div class="text-xs text-[var(--text-tertiary)]">{{ Str::limit($position->description, 50) }}</div>
+                    @endif
+                </td>
+                <td>
+                    <x-badge type="info" size="sm">Level {{ $position->level }}</x-badge>
+                </td>
+                <td>
+                    @if($position->can_approve_documents)
+                        <x-badge type="success" size="sm"><i class="bi bi-check"></i> Ya</x-badge>
+                    @else
+                        <x-badge type="default" size="sm">Tidak</x-badge>
+                    @endif
+                </td>
+                <td>
+                    @if($position->is_active)
+                        <x-badge type="success" size="sm">Aktif</x-badge>
+                    @else
+                        <x-badge type="expired" size="sm">Nonaktif</x-badge>
+                    @endif
+                </td>
+                <td class="text-right">
+                    <div class="flex justify-end gap-2">
+                        @can('master.edit')
+                            <x-button type="button" size="sm" variant="secondary" onclick='editItem(@json($position))'>
+                                <i class="bi bi-pencil"></i>
+                            </x-button>
+                        @endcan
+                        @can('master.delete')
+                            <form action="{{ route('master.positions.destroy', $position) }}" method="POST"
+                                  onsubmit="return confirm('Yakin ingin menghapus?')">
+                                @csrf
+                                @method('DELETE')
+                                <x-button type="submit" size="sm" variant="danger">
+                                    <i class="bi bi-trash"></i>
+                                </x-button>
+                            </form>
+                        @endcan
+                    </div>
+                </td>
+            </tr>
+        @empty
+            <tr>
+                <td colspan="6" class="py-10 text-center">
+                    <div class="space-y-3 text-[var(--text-tertiary)]">
+                        <i class="bi bi-person-badge text-3xl opacity-40"></i>
+                        <p class="text-sm">Tidak ada data jabatan.</p>
+                    </div>
+                </td>
+            </tr>
+        @endforelse
+
         @if($positions->hasPages())
-        <div class="card-footer bg-transparent">
-            {{ $positions->withQueryString()->links() }}
-        </div>
+            <x-slot name="pagination">
+                {{ $positions->withQueryString()->links() }}
+            </x-slot>
         @endif
-    </div>
+    </x-table>
 </div>
 
 {{-- Create Modal --}}
-<div class="modal fade" id="createModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <form action="{{ route('master.positions.store') }}" method="POST">
-                @csrf
-                <div class="modal-header">
-                    <h5 class="modal-title">Tambah Jabatan</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label">Kode <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" name="code" required maxlength="20">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Nama <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" name="name" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Deskripsi</label>
-                        <textarea class="form-control" name="description" rows="2"></textarea>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Level</label>
-                            <input type="number" class="form-control" name="level" value="1" min="1" max="10">
-                            <small class="text-muted">1 = tertinggi, 10 = terendah</small>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Urutan</label>
-                            <input type="number" class="form-control" name="sort_order" value="0" min="0">
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <div class="form-check form-switch">
-                            <input class="form-check-input" type="checkbox" name="can_approve_documents" value="1">
-                            <label class="form-check-label">Dapat Approve Dokumen</label>
-                        </div>
-                    </div>
-                    <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" name="is_active" value="1" checked>
-                        <label class="form-check-label">Aktif</label>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-primary">Simpan</button>
-                </div>
-            </form>
+<x-modal name="createPositionModal" maxWidth="xl">
+    <x-slot name="header">
+        <h3 class="text-lg font-semibold text-[var(--text-primary)]">Tambah Jabatan</h3>
+    </x-slot>
+
+    <form action="{{ route('master.positions.store') }}" method="POST" class="space-y-4">
+        @csrf
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <x-input name="code" label="Kode" :required="true" maxlength="20" />
+            <x-input name="name" label="Nama" :required="true" />
         </div>
-    </div>
-</div>
+        <x-textarea name="description" label="Deskripsi" rows="2" />
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div class="space-y-1.5">
+                <x-input type="number" name="level" label="Level" value="1" min="1" max="10" />
+                <p class="text-xs text-[var(--text-tertiary)]">1 = tertinggi, 10 = terendah</p>
+            </div>
+            <x-input type="number" name="sort_order" label="Urutan" value="0" min="0" />
+        </div>
+
+        <label class="inline-flex items-center gap-2 text-sm text-[var(--text-secondary)]">
+            <input class="h-4 w-4 rounded border-[var(--surface-glass-border)] text-primary-500 focus:ring-primary-500" type="checkbox" name="can_approve_documents" value="1">
+            Dapat Approve Dokumen
+        </label>
+
+        <label class="inline-flex items-center gap-2 text-sm text-[var(--text-secondary)]">
+            <input class="h-4 w-4 rounded border-[var(--surface-glass-border)] text-primary-500 focus:ring-primary-500" type="checkbox" name="is_active" value="1" checked>
+            Aktif
+        </label>
+
+        <div class="flex flex-col-reverse gap-2 border-t border-[var(--surface-glass-border)] pt-4 sm:flex-row sm:justify-end">
+            <x-button type="button" variant="secondary" x-on:click="$dispatch('close-modal', 'createPositionModal')">Batal</x-button>
+            <x-button type="submit">Simpan</x-button>
+        </div>
+    </form>
+</x-modal>
 
 {{-- Edit Modal --}}
-<div class="modal fade" id="editModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <form id="editForm" method="POST">
-                @csrf
-                @method('PUT')
-                <div class="modal-header">
-                    <h5 class="modal-title">Edit Jabatan</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label">Kode <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" name="code" id="edit_code" required maxlength="20">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Nama <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" name="name" id="edit_name" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Deskripsi</label>
-                        <textarea class="form-control" name="description" id="edit_description" rows="2"></textarea>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Level</label>
-                            <input type="number" class="form-control" name="level" id="edit_level" min="1" max="10">
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Urutan</label>
-                            <input type="number" class="form-control" name="sort_order" id="edit_sort_order" min="0">
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <div class="form-check form-switch">
-                            <input class="form-check-input" type="checkbox" name="can_approve_documents" id="edit_can_approve" value="1">
-                            <label class="form-check-label">Dapat Approve Dokumen</label>
-                        </div>
-                    </div>
-                    <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" name="is_active" id="edit_is_active" value="1">
-                        <label class="form-check-label">Aktif</label>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-primary">Simpan</button>
-                </div>
-            </form>
+<x-modal name="editPositionModal" maxWidth="xl">
+    <x-slot name="header">
+        <h3 class="text-lg font-semibold text-[var(--text-primary)]">Edit Jabatan</h3>
+    </x-slot>
+
+    <form id="editForm" method="POST" class="space-y-4">
+        @csrf
+        @method('PUT')
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <x-input name="code" label="Kode" :required="true" maxlength="20" id="edit_code" />
+            <x-input name="name" label="Nama" :required="true" id="edit_name" />
         </div>
-    </div>
-</div>
+        <x-textarea name="description" label="Deskripsi" rows="2" id="edit_description" />
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <x-input type="number" name="level" label="Level" min="1" max="10" id="edit_level" />
+            <x-input type="number" name="sort_order" label="Urutan" min="0" id="edit_sort_order" />
+        </div>
+
+        <label class="inline-flex items-center gap-2 text-sm text-[var(--text-secondary)]">
+            <input class="h-4 w-4 rounded border-[var(--surface-glass-border)] text-primary-500 focus:ring-primary-500" type="checkbox" name="can_approve_documents" id="edit_can_approve" value="1">
+            Dapat Approve Dokumen
+        </label>
+
+        <label class="inline-flex items-center gap-2 text-sm text-[var(--text-secondary)]">
+            <input class="h-4 w-4 rounded border-[var(--surface-glass-border)] text-primary-500 focus:ring-primary-500" type="checkbox" name="is_active" id="edit_is_active" value="1">
+            Aktif
+        </label>
+
+        <div class="flex flex-col-reverse gap-2 border-t border-[var(--surface-glass-border)] pt-4 sm:flex-row sm:justify-end">
+            <x-button type="button" variant="secondary" x-on:click="$dispatch('close-modal', 'editPositionModal')">Batal</x-button>
+            <x-button type="submit">Simpan</x-button>
+        </div>
+    </form>
+</x-modal>
 @endsection
 
 @push('scripts')
@@ -230,7 +188,7 @@ function editItem(item) {
     document.getElementById('edit_sort_order').value = item.sort_order;
     document.getElementById('edit_can_approve').checked = item.can_approve_documents;
     document.getElementById('edit_is_active').checked = item.is_active;
-    new bootstrap.Modal(document.getElementById('editModal')).show();
+    window.dispatchEvent(new CustomEvent('open-modal', { detail: 'editPositionModal' }));
 }
 </script>
 @endpush

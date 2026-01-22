@@ -7,6 +7,8 @@
         '-translate-x-full lg:translate-x-0': !mobileOpen,
         'translate-x-0': mobileOpen
     }"
+    @mouseenter="expandOnHover()"
+    @mouseleave="collapseOnLeave()"
     role="navigation"
     aria-label="Main navigation sidebar"
 >

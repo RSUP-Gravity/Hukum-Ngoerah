@@ -1,8 +1,7 @@
 <!-- Navbar -->
 <header 
-    class="fixed top-0 right-0 z-20 h-16 transition-all duration-300 bg-[var(--surface-glass)] backdrop-blur-xl border-b border-[var(--surface-glass-border)]"
+    class="glass-navbar fixed top-0 right-0 left-0 z-20 h-16 transition-all duration-300"
     :class="expanded ? 'lg:left-[280px]' : 'lg:left-[80px]'"
-    style="left: 0;"
     role="banner"
     aria-label="Top navigation bar"
 >
@@ -98,7 +97,10 @@
                             </a>
                         @empty
                             <div class="px-4 py-8 text-center text-sm text-[var(--text-tertiary)]">
-                                Tidak ada notifikasi
+                                <div class="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-[var(--surface-glass)]">
+                                    <i class="bi bi-bell-slash text-lg"></i>
+                                </div>
+                                <p>Belum ada notifikasi</p>
                             </div>
                         @endforelse
                     </div>

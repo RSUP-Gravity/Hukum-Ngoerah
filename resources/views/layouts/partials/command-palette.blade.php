@@ -29,7 +29,7 @@
                 { label: 'Master Data - Jenis Dokumen', icon: 'folder', url: '{{ route('master.document-types.index') }}', category: 'Master Data' },
                 @endcan
                 { label: 'Profil Saya', icon: 'user', url: '{{ route('profile.show') }}', category: 'Akun' },
-                { label: 'Logout', icon: 'logout', url: '{{ route('logout') }}', category: 'Akun' }
+                { label: 'Logout', icon: 'logout', action: 'logout', category: 'Akun' }
             ];
             if (!this.query) return commands;
             return commands.filter(c => c.label.toLowerCase().includes(this.query.toLowerCase()));
@@ -80,70 +80,98 @@
                         placeholder="Cari dokumen, perintah, atau navigasi..."
                         class="flex-1 bg-transparent border-none focus:ring-0 text-[var(--text-primary)] placeholder-[var(--text-tertiary)]"
                     >
-                    <kbd class="px-2 py-1 text-xs font-medium rounded bg-[var(--surface-glass-border)] text-[var(--text-tertiary)]">ESC</kbd>
+                    <button
+                        type="button"
+                        @click="close()"
+                        class="px-2 py-1 text-xs font-medium rounded bg-[var(--surface-glass-border)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
+                        aria-label="Tutup"
+                    >
+                        ESC
+                    </button>
                 </div>
 
-                <!-- Quick Actions -->
                 <div class="p-2 max-h-80 overflow-y-auto custom-scrollbar">
-                    <div class="mb-2 px-2">
-                        <p class="text-xs font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">Aksi Cepat</p>
+                    <!-- Search Results -->
+                    <div x-show="query" x-cloak>
+                        <div class="mb-2 px-2">
+                            <p class="text-xs font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">Hasil Pencarian</p>
+                        </div>
+                        <template x-for="command in filteredCommands" :key="command.label">
+                            <button
+                                @click="close(); command.action === 'logout' ? document.getElementById('command-logout-form').submit() : window.location.href = command.url"
+                                class="w-full flex items-center justify-between gap-3 px-3 py-2 rounded-lg text-left hover:bg-[var(--surface-glass)] transition-colors"
+                            >
+                                <span class="text-sm font-medium" x-text="command.label"></span>
+                                <span class="text-xs text-[var(--text-tertiary)]" x-text="command.category"></span>
+                            </button>
+                        </template>
+                        <div x-show="filteredCommands.length === 0" class="px-4 py-6 text-center text-xs text-[var(--text-tertiary)]">
+                            Tidak ada hasil yang cocok
+                        </div>
                     </div>
 
-                    <button 
-                        @click="close(); window.location.href='{{ route('documents.create') }}'"
-                        class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left hover:bg-[var(--surface-glass)] transition-colors"
-                    >
-                        <div class="w-8 h-8 rounded-lg bg-primary-500/10 flex items-center justify-center">
-                            <svg class="w-4 h-4 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                    <!-- Quick Actions -->
+                    <div x-show="!query">
+                        <div class="mb-2 px-2">
+                            <p class="text-xs font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">Aksi Cepat</p>
+                        </div>
+
+                        <button 
+                            @click="close(); window.location.href='{{ route('documents.create') }}'"
+                            class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left hover:bg-[var(--surface-glass)] transition-colors"
+                        >
+                            <div class="w-8 h-8 rounded-lg bg-primary-500/10 flex items-center justify-center">
+                                <svg class="w-4 h-4 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                                </svg>
+                            </div>
+                            <div>
+                                <p class="text-sm font-medium">Tambah Dokumen Baru</p>
+                                <p class="text-xs text-[var(--text-tertiary)]">Buat dokumen hukum baru</p>
+                            </div>
+                        </button>
+
+                        <button 
+                            @click="close(); window.location.href='{{ route('documents.index') }}?status=expiring'"
+                            class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left hover:bg-[var(--surface-glass)] transition-colors"
+                        >
+                            <div class="w-8 h-8 rounded-lg bg-yellow-500/10 flex items-center justify-center">
+                                <svg class="w-4 h-4 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </div>
+                            <div>
+                                <p class="text-sm font-medium">Dokumen Hampir Kadaluarsa</p>
+                                <p class="text-xs text-[var(--text-tertiary)]">Lihat dokumen yang akan berakhir</p>
+                            </div>
+                        </button>
+
+                        <div class="my-2 border-t border-[var(--surface-glass-border)]"></div>
+
+                        <div class="mb-2 px-2">
+                            <p class="text-xs font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">Navigasi</p>
+                        </div>
+
+                        <button 
+                            @click="close(); window.location.href='{{ route('dashboard') }}'"
+                            class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left hover:bg-[var(--surface-glass)] transition-colors"
+                        >
+                            <svg class="w-5 h-5 text-[var(--text-tertiary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
                             </svg>
-                        </div>
-                        <div>
-                            <p class="text-sm font-medium">Tambah Dokumen Baru</p>
-                            <p class="text-xs text-[var(--text-tertiary)]">Buat dokumen hukum baru</p>
-                        </div>
-                    </button>
+                            <span class="text-sm">Dashboard</span>
+                        </button>
 
-                    <button 
-                        @click="close(); window.location.href='{{ route('documents.index') }}?status=expiring'"
-                        class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left hover:bg-[var(--surface-glass)] transition-colors"
-                    >
-                        <div class="w-8 h-8 rounded-lg bg-yellow-500/10 flex items-center justify-center">
-                            <svg class="w-4 h-4 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        <button 
+                            @click="close(); window.location.href='{{ route('documents.index') }}'"
+                            class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left hover:bg-[var(--surface-glass)] transition-colors"
+                        >
+                            <svg class="w-5 h-5 text-[var(--text-tertiary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                             </svg>
-                        </div>
-                        <div>
-                            <p class="text-sm font-medium">Dokumen Hampir Kadaluarsa</p>
-                            <p class="text-xs text-[var(--text-tertiary)]">Lihat dokumen yang akan berakhir</p>
-                        </div>
-                    </button>
-
-                    <div class="my-2 border-t border-[var(--surface-glass-border)]"></div>
-
-                    <div class="mb-2 px-2">
-                        <p class="text-xs font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">Navigasi</p>
+                            <span class="text-sm">Semua Dokumen</span>
+                        </button>
                     </div>
-
-                    <button 
-                        @click="close(); window.location.href='{{ route('dashboard') }}'"
-                        class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left hover:bg-[var(--surface-glass)] transition-colors"
-                    >
-                        <svg class="w-5 h-5 text-[var(--text-tertiary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
-                        </svg>
-                        <span class="text-sm">Dashboard</span>
-                    </button>
-
-                    <button 
-                        @click="close(); window.location.href='{{ route('documents.index') }}'"
-                        class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left hover:bg-[var(--surface-glass)] transition-colors"
-                    >
-                        <svg class="w-5 h-5 text-[var(--text-tertiary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                        </svg>
-                        <span class="text-sm">Semua Dokumen</span>
-                    </button>
                 </div>
 
                 <!-- Footer -->
@@ -157,3 +185,7 @@
         </div>
     </div>
 </div>
+
+<form id="command-logout-form" action="{{ route('logout') }}" method="POST" class="hidden">
+    @csrf
+</form>

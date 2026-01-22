@@ -53,6 +53,34 @@ class DocumentHistory extends Model
     const ACTION_VERSION_RESTORED = 'version_restored';
 
     /**
+     * Action labels map
+     */
+    const ACTIONS = [
+        self::ACTION_CREATED => 'Dokumen dibuat',
+        self::ACTION_UPDATED => 'Dokumen diperbarui',
+        self::ACTION_VERSION_UPLOADED => 'Versi baru diunggah',
+        self::ACTION_SUBMITTED_REVIEW => 'Dikirim untuk review',
+        self::ACTION_REVIEWED => 'Direview',
+        self::ACTION_SUBMITTED_APPROVAL => 'Dikirim untuk persetujuan',
+        self::ACTION_APPROVED => 'Disetujui',
+        self::ACTION_REJECTED => 'Ditolak',
+        self::ACTION_PUBLISHED => 'Dipublikasi',
+        self::ACTION_UNPUBLISHED => 'Dibatalkan publikasi',
+        self::ACTION_ARCHIVED => 'Diarsipkan',
+        self::ACTION_RESTORED => 'Dipulihkan',
+        self::ACTION_DELETED => 'Dihapus',
+        self::ACTION_VIEWED => 'Dilihat',
+        self::ACTION_DOWNLOADED => 'Diunduh',
+        self::ACTION_PRINTED => 'Dicetak',
+        self::ACTION_SHARED => 'Dibagikan',
+        self::ACTION_LOCKED => 'Dikunci',
+        self::ACTION_UNLOCKED => 'Dibuka kunci',
+        self::ACTION_COMMENT => 'Komentar ditambahkan',
+        self::ACTION_STATUS_CHANGED => 'Status diubah',
+        self::ACTION_VERSION_RESTORED => 'Versi dipulihkan',
+    ];
+
+    /**
      * Get the document
      */
     public function document(): BelongsTo

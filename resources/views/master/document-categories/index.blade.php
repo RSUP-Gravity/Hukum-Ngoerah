@@ -11,231 +11,197 @@
 @endsection
 
 @section('content')
-<div class="container-fluid">
+<div class="space-y-6">
     {{-- Page Header --}}
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-            <h1 class="h3 mb-1">Kategori Dokumen</h1>
-            <p class="text-muted mb-0">Kelola sub-klasifikasi kategori dokumen</p>
+            <h1 class="text-2xl font-semibold text-[var(--text-primary)]">Kategori Dokumen</h1>
+            <p class="mt-1 text-sm text-[var(--text-secondary)]">Kelola sub-klasifikasi kategori dokumen</p>
         </div>
         @can('master.create')
-        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createModal">
-            <i class="bi bi-plus-lg me-2"></i>Tambah Kategori
-        </button>
+            <x-button type="button" @click="$dispatch('open-modal', 'createCategoryModal')">
+                <i class="bi bi-plus-lg"></i>
+                Tambah Kategori
+            </x-button>
         @endcan
     </div>
 
     {{-- Filters --}}
-    <div class="glass-card mb-4">
-        <div class="card-body">
-            <form action="{{ route('master.document-categories.index') }}" method="GET">
-                <div class="row g-3">
-                    <div class="col-md-6">
-                        <input type="text" class="form-control" name="search" 
-                               value="{{ request('search') }}" placeholder="Cari kategori...">
-                    </div>
-                    <div class="col-md-3">
-                        <select name="type_id" class="form-select">
-                            <option value="">Semua Jenis</option>
-                            @foreach($types as $type)
-                                <option value="{{ $type->id }}" {{ request('type_id') == $type->id ? 'selected' : '' }}>
-                                    {{ $type->name }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="col-md-3">
-                        <button type="submit" class="btn btn-primary me-2">
-                            <i class="bi bi-funnel me-1"></i>Filter
-                        </button>
-                        <a href="{{ route('master.document-categories.index') }}" class="btn btn-outline-secondary">
-                            <i class="bi bi-x-lg"></i>
-                        </a>
-                    </div>
+    <x-glass-card :hover="false" class="p-6">
+        <form action="{{ route('master.document-categories.index') }}" method="GET" class="grid grid-cols-1 gap-4 lg:grid-cols-12">
+            <div class="lg:col-span-6">
+                <label class="text-sm font-medium text-[var(--text-primary)]">Pencarian</label>
+                <div class="relative mt-2">
+                    <i class="bi bi-search absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)]"></i>
+                    <input type="text" class="glass-input pl-10" name="search"
+                           value="{{ request('search') }}" placeholder="Cari kategori...">
                 </div>
-            </form>
-        </div>
-    </div>
+            </div>
+            <div class="lg:col-span-3">
+                <label class="text-sm font-medium text-[var(--text-primary)]">Jenis Dokumen</label>
+                <select name="type_id" class="glass-input mt-2">
+                    <option value="">Semua Jenis</option>
+                    @foreach($types as $type)
+                        <option value="{{ $type->id }}" {{ request('type_id') == $type->id ? 'selected' : '' }}>
+                            {{ $type->name }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="lg:col-span-3 flex flex-wrap items-end gap-2">
+                <x-button type="submit" size="sm">
+                    <i class="bi bi-funnel"></i>
+                    Filter
+                </x-button>
+                <x-button href="{{ route('master.document-categories.index') }}" size="sm" variant="secondary">
+                    <i class="bi bi-x-lg"></i>
+                </x-button>
+            </div>
+        </form>
+    </x-glass-card>
 
     {{-- Table --}}
-    <div class="glass-card">
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover mb-0">
-                    <thead>
-                        <tr>
-                            <th>Kode</th>
-                            <th>Nama Kategori</th>
-                            <th>Jenis Dokumen</th>
-                            <th>Urutan</th>
-                            <th>Status</th>
-                            <th class="text-end">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($categories as $category)
-                        <tr>
-                            <td><code>{{ $category->code }}</code></td>
-                            <td>
-                                <div class="fw-medium">{{ $category->name }}</div>
-                                @if($category->description)
-                                    <small class="text-muted">{{ Str::limit($category->description, 50) }}</small>
-                                @endif
-                            </td>
-                            <td>
-                                <span class="badge bg-light text-dark">{{ $category->documentType->name ?? '-' }}</span>
-                            </td>
-                            <td>{{ $category->sort_order }}</td>
-                            <td>
-                                @if($category->is_active)
-                                    <span class="badge bg-success">Aktif</span>
-                                @else
-                                    <span class="badge bg-danger">Nonaktif</span>
-                                @endif
-                            </td>
-                            <td class="text-end">
-                                <div class="btn-group btn-group-sm">
-                                    @can('master.edit')
-                                    <button type="button" class="btn btn-outline-primary" 
-                                            onclick="editItem({{ json_encode($category) }})">
-                                        <i class="bi bi-pencil"></i>
-                                    </button>
-                                    @endcan
-                                    @can('master.delete')
-                                    <form action="{{ route('master.document-categories.destroy', $category) }}" method="POST" class="d-inline"
-                                          onsubmit="return confirm('Yakin ingin menghapus?')">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="btn btn-outline-danger">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
-                                    </form>
-                                    @endcan
-                                </div>
-                            </td>
-                        </tr>
-                        @empty
-                        <tr>
-                            <td colspan="6" class="text-center py-5">
-                                <div class="text-muted">
-                                    <i class="bi bi-folder fs-1 d-block mb-3 opacity-25"></i>
-                                    <p class="mb-0">Tidak ada data kategori.</p>
-                                </div>
-                            </td>
-                        </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-        </div>
+    <x-table>
+        <x-slot name="header">
+            <th>Kode</th>
+            <th>Nama Kategori</th>
+            <th>Jenis Dokumen</th>
+            <th>Urutan</th>
+            <th>Status</th>
+            <th class="text-right">Aksi</th>
+        </x-slot>
+
+        @forelse($categories as $category)
+            <tr>
+                <td class="text-xs font-mono text-[var(--text-tertiary)]">{{ $category->code }}</td>
+                <td>
+                    <div class="text-sm font-semibold text-[var(--text-primary)]">{{ $category->name }}</div>
+                    @if($category->description)
+                        <div class="text-xs text-[var(--text-tertiary)]">{{ Str::limit($category->description, 50) }}</div>
+                    @endif
+                </td>
+                <td>
+                    <x-badge type="default" size="sm">{{ $category->documentType->name ?? '-' }}</x-badge>
+                </td>
+                <td class="text-sm text-[var(--text-primary)]">{{ $category->sort_order }}</td>
+                <td>
+                    @if($category->is_active)
+                        <x-badge type="success" size="sm">Aktif</x-badge>
+                    @else
+                        <x-badge type="expired" size="sm">Nonaktif</x-badge>
+                    @endif
+                </td>
+                <td class="text-right">
+                    <div class="flex justify-end gap-2">
+                        @can('master.edit')
+                            <x-button type="button" size="sm" variant="secondary" onclick='editItem(@json($category))'>
+                                <i class="bi bi-pencil"></i>
+                            </x-button>
+                        @endcan
+                        @can('master.delete')
+                            <form action="{{ route('master.document-categories.destroy', $category) }}" method="POST"
+                                  onsubmit="return confirm('Yakin ingin menghapus?')">
+                                @csrf
+                                @method('DELETE')
+                                <x-button type="submit" size="sm" variant="danger">
+                                    <i class="bi bi-trash"></i>
+                                </x-button>
+                            </form>
+                        @endcan
+                    </div>
+                </td>
+            </tr>
+        @empty
+            <tr>
+                <td colspan="6" class="py-10 text-center">
+                    <div class="space-y-3 text-[var(--text-tertiary)]">
+                        <i class="bi bi-folder text-3xl opacity-40"></i>
+                        <p class="text-sm">Tidak ada data kategori.</p>
+                    </div>
+                </td>
+            </tr>
+        @endforelse
+
         @if($categories->hasPages())
-        <div class="card-footer bg-transparent">
-            {{ $categories->withQueryString()->links() }}
-        </div>
+            <x-slot name="pagination">
+                {{ $categories->withQueryString()->links() }}
+            </x-slot>
         @endif
-    </div>
+    </x-table>
 </div>
 
 {{-- Create Modal --}}
-<div class="modal fade" id="createModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <form action="{{ route('master.document-categories.store') }}" method="POST">
-                @csrf
-                <div class="modal-header">
-                    <h5 class="modal-title">Tambah Kategori</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label">Jenis Dokumen <span class="text-danger">*</span></label>
-                        <select class="form-select" name="document_type_id" required>
-                            <option value="">Pilih Jenis</option>
-                            @foreach($types as $type)
-                                <option value="{{ $type->id }}">{{ $type->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Kode <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" name="code" required maxlength="20">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Nama <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" name="name" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Deskripsi</label>
-                        <textarea class="form-control" name="description" rows="2"></textarea>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Urutan</label>
-                        <input type="number" class="form-control" name="sort_order" value="0" min="0">
-                    </div>
-                    <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" name="is_active" value="1" checked>
-                        <label class="form-check-label">Aktif</label>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-primary">Simpan</button>
-                </div>
-            </form>
+<x-modal name="createCategoryModal" maxWidth="xl">
+    <x-slot name="header">
+        <h3 class="text-lg font-semibold text-[var(--text-primary)]">Tambah Kategori</h3>
+    </x-slot>
+
+    <form action="{{ route('master.document-categories.store') }}" method="POST" class="space-y-4">
+        @csrf
+        <div class="space-y-1.5">
+            <label class="block text-sm font-medium text-[var(--text-primary)]">Jenis Dokumen <span class="text-red-500" aria-hidden="true">*</span></label>
+            <select class="glass-input" name="document_type_id" required>
+                <option value="">Pilih Jenis</option>
+                @foreach($types as $type)
+                    <option value="{{ $type->id }}">{{ $type->name }}</option>
+                @endforeach
+            </select>
         </div>
-    </div>
-</div>
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <x-input name="code" label="Kode" :required="true" maxlength="20" />
+            <x-input name="name" label="Nama" :required="true" />
+        </div>
+        <x-textarea name="description" label="Deskripsi" rows="2" />
+        <x-input type="number" name="sort_order" label="Urutan" value="0" min="0" />
+
+        <label class="inline-flex items-center gap-2 text-sm text-[var(--text-secondary)]">
+            <input class="h-4 w-4 rounded border-[var(--surface-glass-border)] text-primary-500 focus:ring-primary-500" type="checkbox" name="is_active" value="1" checked>
+            Aktif
+        </label>
+
+        <div class="flex flex-col-reverse gap-2 border-t border-[var(--surface-glass-border)] pt-4 sm:flex-row sm:justify-end">
+            <x-button type="button" variant="secondary" x-on:click="$dispatch('close-modal', 'createCategoryModal')">Batal</x-button>
+            <x-button type="submit">Simpan</x-button>
+        </div>
+    </form>
+</x-modal>
 
 {{-- Edit Modal --}}
-<div class="modal fade" id="editModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <form id="editForm" method="POST">
-                @csrf
-                @method('PUT')
-                <div class="modal-header">
-                    <h5 class="modal-title">Edit Kategori</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label">Jenis Dokumen <span class="text-danger">*</span></label>
-                        <select class="form-select" name="document_type_id" id="edit_type_id" required>
-                            <option value="">Pilih Jenis</option>
-                            @foreach($types as $type)
-                                <option value="{{ $type->id }}">{{ $type->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Kode <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" name="code" id="edit_code" required maxlength="20">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Nama <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" name="name" id="edit_name" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Deskripsi</label>
-                        <textarea class="form-control" name="description" id="edit_description" rows="2"></textarea>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Urutan</label>
-                        <input type="number" class="form-control" name="sort_order" id="edit_sort_order" min="0">
-                    </div>
-                    <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" name="is_active" id="edit_is_active" value="1">
-                        <label class="form-check-label">Aktif</label>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-primary">Simpan</button>
-                </div>
-            </form>
+<x-modal name="editCategoryModal" maxWidth="xl">
+    <x-slot name="header">
+        <h3 class="text-lg font-semibold text-[var(--text-primary)]">Edit Kategori</h3>
+    </x-slot>
+
+    <form id="editForm" method="POST" class="space-y-4">
+        @csrf
+        @method('PUT')
+        <div class="space-y-1.5">
+            <label class="block text-sm font-medium text-[var(--text-primary)]">Jenis Dokumen <span class="text-red-500" aria-hidden="true">*</span></label>
+            <select class="glass-input" name="document_type_id" id="edit_type_id" required>
+                <option value="">Pilih Jenis</option>
+                @foreach($types as $type)
+                    <option value="{{ $type->id }}">{{ $type->name }}</option>
+                @endforeach
+            </select>
         </div>
-    </div>
-</div>
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <x-input name="code" label="Kode" :required="true" maxlength="20" id="edit_code" />
+            <x-input name="name" label="Nama" :required="true" id="edit_name" />
+        </div>
+        <x-textarea name="description" label="Deskripsi" rows="2" id="edit_description" />
+        <x-input type="number" name="sort_order" label="Urutan" min="0" id="edit_sort_order" />
+
+        <label class="inline-flex items-center gap-2 text-sm text-[var(--text-secondary)]">
+            <input class="h-4 w-4 rounded border-[var(--surface-glass-border)] text-primary-500 focus:ring-primary-500" type="checkbox" name="is_active" id="edit_is_active" value="1">
+            Aktif
+        </label>
+
+        <div class="flex flex-col-reverse gap-2 border-t border-[var(--surface-glass-border)] pt-4 sm:flex-row sm:justify-end">
+            <x-button type="button" variant="secondary" x-on:click="$dispatch('close-modal', 'editCategoryModal')">Batal</x-button>
+            <x-button type="submit">Simpan</x-button>
+        </div>
+    </form>
+</x-modal>
 @endsection
 
 @push('scripts')
@@ -248,7 +214,7 @@ function editItem(item) {
     document.getElementById('edit_description').value = item.description || '';
     document.getElementById('edit_sort_order').value = item.sort_order;
     document.getElementById('edit_is_active').checked = item.is_active;
-    new bootstrap.Modal(document.getElementById('editModal')).show();
+    window.dispatchEvent(new CustomEvent('open-modal', { detail: 'editCategoryModal' }));
 }
 </script>
 @endpush

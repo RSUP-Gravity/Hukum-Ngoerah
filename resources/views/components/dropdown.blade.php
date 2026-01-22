@@ -19,7 +19,7 @@
     ][$width] ?? 'w-48';
 @endphp
 
-<div x-data="dropdown()" class="relative inline-block text-left">
+<div x-data="dropdown()" class="relative inline-block text-left" @keydown.escape.window="close()">
     <!-- Trigger -->
     <div @click="toggle()">
         {{ $trigger }}
@@ -35,6 +35,7 @@
         x-transition:leave-start="opacity-100 scale-100"
         x-transition:leave-end="opacity-0 scale-95"
         @click.outside="close()"
+        @click="close()"
         class="glass-dropdown {{ $alignmentClasses }} {{ $widthClasses }} {{ $contentClasses }}"
         x-cloak
     >

@@ -88,6 +88,16 @@ class Document extends Model
     const CONF_RESTRICTED = 'restricted';
 
     /**
+     * Confidentiality labels
+     */
+    const CONFIDENTIALITIES = [
+        self::CONF_PUBLIC => 'Publik',
+        self::CONF_INTERNAL => 'Internal',
+        self::CONF_CONFIDENTIAL => 'Rahasia',
+        self::CONF_RESTRICTED => 'Terbatas',
+    ];
+
+    /**
      * Boot the model
      */
     protected static function boot()
@@ -220,6 +230,14 @@ class Document extends Model
     }
 
     /**
+     * Get document access permissions
+     */
+    public function accessPermissions(): HasMany
+    {
+        return $this->hasMany(DocumentAccess::class, 'document_id');
+    }
+
+    /**
      * Get access controls
      */
     public function accessControls(): HasMany
@@ -282,6 +300,14 @@ class Document extends Model
     public function scopePublished($query)
     {
         return $query->where('status', self::STATUS_PUBLISHED);
+    }
+
+    /**
+     * Scope: Active documents
+     */
+    public function scopeActive($query)
+    {
+        return $query->where('status', '!=', self::STATUS_ARCHIVED);
     }
 
     /**

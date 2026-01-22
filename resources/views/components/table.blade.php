@@ -3,9 +3,13 @@
     'hoverable' => true,
 ])
 
+@php
+    $tableClasses = 'glass-table min-w-full' . ($hoverable ? '' : ' no-hover');
+@endphp
+
 <div class="glass-card-static overflow-hidden">
     <div class="overflow-x-auto">
-        <table {{ $attributes->merge(['class' => 'glass-table min-w-full']) }}>
+        <table {{ $attributes->merge(['class' => $tableClasses]) }}>
             @if(isset($header))
                 <thead>
                     <tr>

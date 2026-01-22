@@ -13,6 +13,27 @@
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.bunny.net">
 
+    <style>
+        html { background: #F5F7FB; color: #0B1220; }
+        html.dark { background: #0F172A; color: #F1F5F9; }
+        body { background: inherit; color: inherit; }
+    </style>
+
+    <script>
+        (function() {
+            const stored = localStorage.getItem('darkMode');
+            const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+            if (stored === 'true' || (stored === null && prefersDark)) {
+                document.documentElement.classList.add('dark');
+                document.documentElement.style.backgroundColor = '#0F172A';
+                document.documentElement.style.color = '#F1F5F9';
+            } else {
+                document.documentElement.style.backgroundColor = '#F5F7FB';
+                document.documentElement.style.color = '#0B1220';
+            }
+        })();
+    </script>
+
     <!-- Scripts & Styles -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
@@ -20,9 +41,6 @@
     @stack('styles')
 </head>
 <body class="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] antialiased">
-    <!-- Page Transition Overlay -->
-    <div id="page-transition-overlay" class="page-transition-overlay"></div>
-    
     <div x-data="sidebar()" class="min-h-screen">
         <!-- Sidebar -->
         @include('layouts.partials.sidebar')
@@ -51,7 +69,7 @@
 
             <!-- Page Content -->
             <main class="min-h-[calc(100vh-64px)] pt-16 lg:pt-[64px]">
-                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 page-content" x-data="{ pageLoaded: false }" x-init="setTimeout(() => pageLoaded = true, 50)" :class="{ 'page-enter-active': pageLoaded }">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                     <!-- Page Header -->
                     @if(isset($header))
                         <div class="mb-8">
@@ -142,81 +160,6 @@
             </button>
         </nav>
     </div>
-
-    <!-- Page Transition Scripts -->
-    <script>
-        (function() {
-            // Check if user prefers reduced motion
-            const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-            
-            if (!prefersReducedMotion) {
-                const overlay = document.getElementById('page-transition-overlay');
-                
-                // Handle link clicks for page transitions
-                document.addEventListener('click', function(e) {
-                    const link = e.target.closest('a[href]');
-                    
-                    if (!link) return;
-                    
-                    // Skip external links, anchors, downloads, and special protocols
-                    const href = link.getAttribute('href');
-                    if (!href || 
-                        href.startsWith('#') || 
-                        href.startsWith('javascript:') ||
-                        href.startsWith('mailto:') ||
-                        href.startsWith('tel:') ||
-                        link.hasAttribute('download') ||
-                        link.getAttribute('target') === '_blank' ||
-                        link.dataset.noTransition !== undefined ||
-                        e.ctrlKey || e.metaKey || e.shiftKey) {
-                        return;
-                    }
-                    
-                    // Check if it's an internal link
-                    const url = new URL(href, window.location.origin);
-                    if (url.origin !== window.location.origin) {
-                        return;
-                    }
-                    
-                    // Prevent default and start transition
-                    e.preventDefault();
-                    
-                    // Add leaving class to current page content
-                    document.body.classList.add('page-leaving');
-                    
-                    // Show overlay
-                    overlay.classList.add('active');
-                    
-                    // Navigate after transition
-                    setTimeout(function() {
-                        window.location.href = href;
-                    }, 200);
-                });
-                
-                // Handle back/forward navigation
-                window.addEventListener('pageshow', function(e) {
-                    if (e.persisted) {
-                        // Page was loaded from cache (back/forward)
-                        overlay.classList.remove('active');
-                        overlay.classList.add('exit');
-                        document.body.classList.remove('page-leaving');
-                        
-                        setTimeout(function() {
-                            overlay.classList.remove('exit');
-                        }, 400);
-                    }
-                });
-                
-                // On page load, ensure overlay exits smoothly
-                window.addEventListener('load', function() {
-                    overlay.classList.add('exit');
-                    setTimeout(function() {
-                        overlay.classList.remove('exit', 'active');
-                    }, 400);
-                });
-            }
-        })();
-    </script>
 
     @stack('scripts')
 </body>

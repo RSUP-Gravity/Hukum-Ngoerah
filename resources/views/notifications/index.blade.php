@@ -10,139 +10,126 @@
 @endsection
 
 @section('content')
-<div class="container-fluid">
+<div class="space-y-6">
     {{-- Page Header --}}
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-            <h1 class="h3 mb-1">Notifikasi</h1>
-            <p class="text-muted mb-0">Kelola notifikasi dan pemberitahuan</p>
+            <h1 class="text-2xl font-semibold text-[var(--text-primary)]">Notifikasi</h1>
+            <p class="mt-1 text-sm text-[var(--text-secondary)]">Kelola notifikasi dan pemberitahuan</p>
         </div>
-        @if($notifications->where('read_at', null)->count() > 0)
-        <form action="{{ route('notifications.read-all') }}" method="POST">
-            @csrf
-            <button type="submit" class="btn btn-outline-primary">
-                <i class="bi bi-check-all me-2"></i>Tandai Semua Dibaca
-            </button>
-        </form>
+        @if($notifications->where('is_read', false)->count() > 0)
+            <form action="{{ route('notifications.read-all') }}" method="POST">
+                @csrf
+                <x-button type="submit" variant="secondary">
+                    <i class="bi bi-check-all"></i>
+                    Tandai Semua Dibaca
+                </x-button>
+            </form>
         @endif
     </div>
 
     {{-- Filters --}}
-    <div class="glass-card mb-4">
-        <div class="card-body">
-            <div class="d-flex gap-2 flex-wrap">
-                <a href="{{ route('notifications.index') }}" 
-                   class="btn {{ !request('filter') ? 'btn-primary' : 'btn-outline-secondary' }}">
-                    Semua
-                </a>
-                <a href="{{ route('notifications.index', ['filter' => 'unread']) }}" 
-                   class="btn {{ request('filter') === 'unread' ? 'btn-primary' : 'btn-outline-secondary' }}">
-                    Belum Dibaca
-                    @if($unreadCount > 0)
-                        <span class="badge bg-danger ms-1">{{ $unreadCount }}</span>
-                    @endif
-                </a>
-                <a href="{{ route('notifications.index', ['filter' => 'read']) }}" 
-                   class="btn {{ request('filter') === 'read' ? 'btn-primary' : 'btn-outline-secondary' }}">
-                    Sudah Dibaca
-                </a>
-            </div>
+    <x-glass-card :hover="false" class="p-4">
+        <div class="flex flex-wrap gap-2">
+            <x-button href="{{ route('notifications.index') }}" size="sm" :variant="!request('filter') ? 'primary' : 'secondary'">
+                Semua
+            </x-button>
+                <x-button href="{{ route('notifications.index', ['filter' => 'unread']) }}" size="sm" :variant="request('filter') === 'unread' ? 'primary' : 'secondary'">
+                Belum Dibaca
+                @if($unreadCount > 0)
+                    <x-badge type="critical" size="sm" class="ml-2">{{ $unreadCount }}</x-badge>
+                @endif
+            </x-button>
+            <x-button href="{{ route('notifications.index', ['filter' => 'read']) }}" size="sm" :variant="request('filter') === 'read' ? 'primary' : 'secondary'">
+                Sudah Dibaca
+            </x-button>
         </div>
-    </div>
+    </x-glass-card>
 
     {{-- Notification List --}}
-    <div class="glass-card">
-        <div class="card-body p-0">
-            @forelse($notifications as $notification)
-            <div class="notification-item p-3 border-bottom {{ !$notification->read_at ? 'bg-light' : '' }}">
-                <div class="d-flex">
-                    <div class="flex-shrink-0 me-3">
-                        @php
-                            $iconClass = match($notification->data['type'] ?? 'info') {
-                                'document' => 'bi-file-earmark-text text-primary',
-                                'approval' => 'bi-check-circle text-success',
-                                'rejection' => 'bi-x-circle text-danger',
-                                'warning' => 'bi-exclamation-triangle text-warning',
-                                'expiry' => 'bi-clock text-warning',
-                                default => 'bi-bell text-info'
-                            };
-                        @endphp
-                        <div class="rounded-circle bg-light d-flex align-items-center justify-content-center" 
-                             style="width: 48px; height: 48px;">
-                            <i class="bi {{ $iconClass }} fs-5"></i>
-                        </div>
+    <x-glass-card :hover="false" class="divide-y divide-[var(--surface-glass-border)]">
+        @forelse($notifications as $notification)
+            @php
+                $iconClass = match($notification->data['type'] ?? 'info') {
+                    'document' => 'bi-file-earmark-text text-primary-400',
+                    'approval' => 'bi-check-circle text-emerald-400',
+                    'rejection' => 'bi-x-circle text-rose-400',
+                    'warning' => 'bi-exclamation-triangle text-amber-400',
+                    'expiry' => 'bi-clock text-amber-400',
+                    default => 'bi-bell text-cyan-400'
+                };
+            @endphp
+            <div class="p-4 transition hover:bg-[var(--surface-glass)] {{ !$notification->is_read ? 'bg-[var(--surface-glass)]' : '' }}">
+                <div class="flex flex-col gap-4 sm:flex-row">
+                    <div class="flex h-12 w-12 items-center justify-center rounded-full bg-[var(--surface-glass)]">
+                        <i class="bi {{ $iconClass }} text-lg"></i>
                     </div>
-                    <div class="flex-grow-1">
-                        <div class="d-flex justify-content-between align-items-start">
+                    <div class="flex-1 space-y-3">
+                        <div class="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
                             <div>
-                                <h6 class="mb-1 {{ !$notification->read_at ? 'fw-bold' : '' }}">
+                                <h3 class="text-sm font-semibold text-[var(--text-primary)] {{ !$notification->read_at ? 'font-semibold' : 'font-medium' }}">
                                     {{ $notification->data['title'] ?? 'Notifikasi' }}
-                                </h6>
-                                <p class="mb-1 text-muted">
+                                </h3>
+                                <p class="mt-1 text-sm text-[var(--text-secondary)]">
                                     {{ $notification->data['message'] ?? '' }}
                                 </p>
                                 @if(isset($notification->data['document_number']))
-                                    <small class="text-primary">
-                                        <i class="bi bi-file-earmark me-1"></i>
+                                    <div class="mt-2 text-xs font-medium text-primary-400">
+                                        <i class="bi bi-file-earmark"></i>
                                         {{ $notification->data['document_number'] }}
-                                    </small>
+                                    </div>
                                 @endif
                             </div>
-                            <div class="text-end">
-                                <small class="text-muted d-block">
-                                    {{ $notification->created_at->diffForHumans() }}
-                                </small>
-                                @if(!$notification->read_at)
-                                    <span class="badge bg-primary mt-1">Baru</span>
+                            <div class="text-sm text-[var(--text-tertiary)]">
+                                <div>{{ $notification->created_at->diffForHumans() }}</div>
+                                @if(!$notification->is_read)
+                                    <x-badge type="info" size="sm" class="mt-2">Baru</x-badge>
                                 @endif
                             </div>
                         </div>
-                        <div class="mt-2">
+
+                        <div class="flex flex-wrap gap-2">
                             @if(isset($notification->data['action_url']))
-                                <a href="{{ $notification->data['action_url'] }}" class="btn btn-sm btn-outline-primary">
-                                    <i class="bi bi-eye me-1"></i>Lihat Detail
-                                </a>
+                                <x-button href="{{ $notification->data['action_url'] }}" size="sm" variant="secondary">
+                                    <i class="bi bi-eye"></i>
+                                    Lihat Detail
+                                </x-button>
                             @endif
-                            @if(!$notification->read_at)
-                                <form action="{{ route('notifications.read', $notification->id) }}" method="POST" class="d-inline">
+                            @if(!$notification->is_read)
+                                <form action="{{ route('notifications.read', $notification->id) }}" method="POST">
                                     @csrf
-                                    <button type="submit" class="btn btn-sm btn-outline-secondary">
-                                        <i class="bi bi-check me-1"></i>Tandai Dibaca
-                                    </button>
+                                    <x-button type="submit" size="sm" variant="secondary">
+                                        <i class="bi bi-check"></i>
+                                        Tandai Dibaca
+                                    </x-button>
                                 </form>
                             @endif
-                            <form action="{{ route('notifications.destroy', $notification->id) }}" method="POST" class="d-inline"
+                            <form action="{{ route('notifications.destroy', $notification->id) }}" method="POST"
                                   onsubmit="return confirm('Yakin ingin menghapus notifikasi ini?')">
                                 @csrf
                                 @method('DELETE')
-                                <button type="submit" class="btn btn-sm btn-outline-danger">
+                                <x-button type="submit" size="sm" variant="danger">
                                     <i class="bi bi-trash"></i>
-                                </button>
+                                </x-button>
                             </form>
                         </div>
                     </div>
                 </div>
             </div>
-            @empty
-            <div class="text-center py-5">
-                <div class="text-muted">
-                    <i class="bi bi-bell-slash fs-1 d-block mb-3 opacity-25"></i>
-                    <p class="mb-0">Tidak ada notifikasi.</p>
+        @empty
+            <div class="py-10 text-center">
+                <div class="space-y-3 text-[var(--text-tertiary)]">
+                    <i class="bi bi-bell-slash text-3xl opacity-40"></i>
+                    <p class="text-sm">Tidak ada notifikasi.</p>
                 </div>
             </div>
-            @endforelse
-        </div>
+        @endforelse
+
         @if($notifications->hasPages())
-        <div class="card-footer bg-transparent">
-            {{ $notifications->withQueryString()->links() }}
-        </div>
+            <div class="p-4">
+                {{ $notifications->withQueryString()->links() }}
+            </div>
         @endif
-    </div>
+    </x-glass-card>
 </div>
 @endsection
-
-<style>
-.notification-item:hover {
-    background-color: var(--bs-light) !important;
-}
-</style>

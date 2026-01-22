@@ -46,7 +46,7 @@
     x-transition:leave-end="opacity-0 transform -translate-y-2"
     role="alert"
     aria-live="{{ $type === 'error' ? 'assertive' : 'polite' }}"
-    {{ $attributes->merge(['class' => "rounded-lg border p-4 {$config['bg']} {$config['border']}"]) }}
+    {{ $attributes->merge(['class' => "glass-alert rounded-lg border p-4 {$config['bg']} {$config['border']}"]) }}
 >
     <div class="flex">
         <div class="flex-shrink-0">

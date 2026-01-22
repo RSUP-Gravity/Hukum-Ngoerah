@@ -1,6 +1,7 @@
 @props([
     'href' => null,
     'active' => false,
+    'type' => 'button',
 ])
 
 @php
@@ -12,7 +13,7 @@
         {{ $slot }}
     </a>
 @else
-    <button type="button" {{ $attributes->merge(['class' => $classes . ' w-full text-left']) }}>
+    <button type="{{ $type }}" {{ $attributes->merge(['class' => $classes . ' w-full text-left']) }}>
         {{ $slot }}
     </button>
 @endif

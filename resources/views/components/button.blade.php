@@ -14,7 +14,7 @@
         'primary' => 'btn-primary',
         'secondary' => 'btn-secondary',
         'ghost' => 'btn-ghost',
-        'danger' => 'bg-red-500 hover:bg-red-600 text-white rounded-lg shadow-button',
+        'danger' => 'btn-danger',
     ];
     
     $sizes = [

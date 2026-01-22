@@ -1,6 +1,6 @@
 @props([
     'hover' => true,
-    'padding' => 'p-6'
+    'padding' => 'p-5 sm:p-6'
 ])
 
 <div {{ $attributes->merge([

@@ -11,195 +11,149 @@
 @endsection
 
 @section('content')
-<div class="container-fluid">
+<div class="space-y-6">
     {{-- Page Header --}}
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-            <h1 class="h3 mb-1">Jenis Dokumen</h1>
-            <p class="text-muted mb-0">Kelola klasifikasi jenis dokumen</p>
+            <h1 class="text-2xl font-semibold text-[var(--text-primary)]">Jenis Dokumen</h1>
+            <p class="mt-1 text-sm text-[var(--text-secondary)]">Kelola klasifikasi jenis dokumen</p>
         </div>
         @can('master.create')
-        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createModal">
-            <i class="bi bi-plus-lg me-2"></i>Tambah Jenis
-        </button>
+            <x-button type="button" @click="$dispatch('open-modal', 'createTypeModal')">
+                <i class="bi bi-plus-lg"></i>
+                Tambah Jenis
+            </x-button>
         @endcan
     </div>
 
     {{-- Table --}}
-    <div class="glass-card">
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover mb-0">
-                    <thead>
-                        <tr>
-                            <th>Kode</th>
-                            <th>Nama Jenis</th>
-                            <th>Prefix</th>
-                            <th>Kategori</th>
-                            <th>Urutan</th>
-                            <th>Status</th>
-                            <th class="text-end">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($types as $type)
-                        <tr>
-                            <td><code>{{ $type->code }}</code></td>
-                            <td>
-                                <div class="fw-medium">{{ $type->name }}</div>
-                                @if($type->description)
-                                    <small class="text-muted">{{ Str::limit($type->description, 50) }}</small>
-                                @endif
-                            </td>
-                            <td><code>{{ $type->prefix }}</code></td>
-                            <td>{{ $type->categories_count ?? 0 }} kategori</td>
-                            <td>{{ $type->sort_order }}</td>
-                            <td>
-                                @if($type->is_active)
-                                    <span class="badge bg-success">Aktif</span>
-                                @else
-                                    <span class="badge bg-danger">Nonaktif</span>
-                                @endif
-                            </td>
-                            <td class="text-end">
-                                <div class="btn-group btn-group-sm">
-                                    @can('master.edit')
-                                    <button type="button" class="btn btn-outline-primary" 
-                                            onclick="editItem({{ json_encode($type) }})">
-                                        <i class="bi bi-pencil"></i>
-                                    </button>
-                                    @endcan
-                                    @can('master.delete')
-                                    @if(($type->categories_count ?? 0) === 0)
-                                    <form action="{{ route('master.document-types.destroy', $type) }}" method="POST" class="d-inline"
-                                          onsubmit="return confirm('Yakin ingin menghapus?')">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="btn btn-outline-danger">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
-                                    </form>
-                                    @endif
-                                    @endcan
-                                </div>
-                            </td>
-                        </tr>
-                        @empty
-                        <tr>
-                            <td colspan="7" class="text-center py-5">
-                                <div class="text-muted">
-                                    <i class="bi bi-file-earmark-text fs-1 d-block mb-3 opacity-25"></i>
-                                    <p class="mb-0">Tidak ada data jenis dokumen.</p>
-                                </div>
-                            </td>
-                        </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-        </div>
+    <x-table>
+        <x-slot name="header">
+            <th>Kode</th>
+            <th>Nama Jenis</th>
+            <th>Prefix</th>
+            <th>Kategori</th>
+            <th>Urutan</th>
+            <th>Status</th>
+            <th class="text-right">Aksi</th>
+        </x-slot>
+
+        @forelse($types as $type)
+            <tr>
+                <td class="text-xs font-mono text-[var(--text-tertiary)]">{{ $type->code }}</td>
+                <td>
+                    <div class="text-sm font-semibold text-[var(--text-primary)]">{{ $type->name }}</div>
+                    @if($type->description)
+                        <div class="text-xs text-[var(--text-tertiary)]">{{ Str::limit($type->description, 50) }}</div>
+                    @endif
+                </td>
+                <td class="text-xs font-mono text-[var(--text-tertiary)]">{{ $type->prefix }}</td>
+                <td class="text-sm text-[var(--text-primary)]">{{ $type->categories_count ?? 0 }} kategori</td>
+                <td class="text-sm text-[var(--text-primary)]">{{ $type->sort_order }}</td>
+                <td>
+                    @if($type->is_active)
+                        <x-badge type="success" size="sm">Aktif</x-badge>
+                    @else
+                        <x-badge type="expired" size="sm">Nonaktif</x-badge>
+                    @endif
+                </td>
+                <td class="text-right">
+                    <div class="flex justify-end gap-2">
+                        @can('master.edit')
+                            <x-button type="button" size="sm" variant="secondary" onclick='editItem(@json($type))'>
+                                <i class="bi bi-pencil"></i>
+                            </x-button>
+                        @endcan
+                        @can('master.delete')
+                            @if(($type->categories_count ?? 0) === 0)
+                                <form action="{{ route('master.document-types.destroy', $type) }}" method="POST"
+                                      onsubmit="return confirm('Yakin ingin menghapus?')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <x-button type="submit" size="sm" variant="danger">
+                                        <i class="bi bi-trash"></i>
+                                    </x-button>
+                                </form>
+                            @endif
+                        @endcan
+                    </div>
+                </td>
+            </tr>
+        @empty
+            <tr>
+                <td colspan="7" class="py-10 text-center">
+                    <div class="space-y-3 text-[var(--text-tertiary)]">
+                        <i class="bi bi-file-earmark-text text-3xl opacity-40"></i>
+                        <p class="text-sm">Tidak ada data jenis dokumen.</p>
+                    </div>
+                </td>
+            </tr>
+        @endforelse
+
         @if($types->hasPages())
-        <div class="card-footer bg-transparent">
-            {{ $types->withQueryString()->links() }}
-        </div>
+            <x-slot name="pagination">
+                {{ $types->withQueryString()->links() }}
+            </x-slot>
         @endif
-    </div>
+    </x-table>
 </div>
 
 {{-- Create Modal --}}
-<div class="modal fade" id="createModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <form action="{{ route('master.document-types.store') }}" method="POST">
-                @csrf
-                <div class="modal-header">
-                    <h5 class="modal-title">Tambah Jenis Dokumen</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Kode <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" name="code" required maxlength="20">
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Prefix Nomor</label>
-                            <input type="text" class="form-control" name="prefix" maxlength="10">
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Nama <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" name="name" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Deskripsi</label>
-                        <textarea class="form-control" name="description" rows="2"></textarea>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Urutan</label>
-                        <input type="number" class="form-control" name="sort_order" value="0" min="0">
-                    </div>
-                    <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" name="is_active" value="1" checked>
-                        <label class="form-check-label">Aktif</label>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-primary">Simpan</button>
-                </div>
-            </form>
+<x-modal name="createTypeModal" maxWidth="xl">
+    <x-slot name="header">
+        <h3 class="text-lg font-semibold text-[var(--text-primary)]">Tambah Jenis Dokumen</h3>
+    </x-slot>
+
+    <form action="{{ route('master.document-types.store') }}" method="POST" class="space-y-4">
+        @csrf
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <x-input name="code" label="Kode" :required="true" maxlength="20" />
+            <x-input name="prefix" label="Prefix Nomor" maxlength="10" />
         </div>
-    </div>
-</div>
+        <x-input name="name" label="Nama" :required="true" />
+        <x-textarea name="description" label="Deskripsi" rows="2" />
+        <x-input type="number" name="sort_order" label="Urutan" value="0" min="0" />
+
+        <label class="inline-flex items-center gap-2 text-sm text-[var(--text-secondary)]">
+            <input class="h-4 w-4 rounded border-[var(--surface-glass-border)] text-primary-500 focus:ring-primary-500" type="checkbox" name="is_active" value="1" checked>
+            Aktif
+        </label>
+
+        <div class="flex flex-col-reverse gap-2 border-t border-[var(--surface-glass-border)] pt-4 sm:flex-row sm:justify-end">
+            <x-button type="button" variant="secondary" x-on:click="$dispatch('close-modal', 'createTypeModal')">Batal</x-button>
+            <x-button type="submit">Simpan</x-button>
+        </div>
+    </form>
+</x-modal>
 
 {{-- Edit Modal --}}
-<div class="modal fade" id="editModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <form id="editForm" method="POST">
-                @csrf
-                @method('PUT')
-                <div class="modal-header">
-                    <h5 class="modal-title">Edit Jenis Dokumen</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Kode <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" name="code" id="edit_code" required maxlength="20">
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Prefix Nomor</label>
-                            <input type="text" class="form-control" name="prefix" id="edit_prefix" maxlength="10">
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Nama <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" name="name" id="edit_name" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Deskripsi</label>
-                        <textarea class="form-control" name="description" id="edit_description" rows="2"></textarea>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Urutan</label>
-                        <input type="number" class="form-control" name="sort_order" id="edit_sort_order" min="0">
-                    </div>
-                    <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" name="is_active" id="edit_is_active" value="1">
-                        <label class="form-check-label">Aktif</label>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-primary">Simpan</button>
-                </div>
-            </form>
+<x-modal name="editTypeModal" maxWidth="xl">
+    <x-slot name="header">
+        <h3 class="text-lg font-semibold text-[var(--text-primary)]">Edit Jenis Dokumen</h3>
+    </x-slot>
+
+    <form id="editForm" method="POST" class="space-y-4">
+        @csrf
+        @method('PUT')
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <x-input name="code" label="Kode" :required="true" maxlength="20" id="edit_code" />
+            <x-input name="prefix" label="Prefix Nomor" maxlength="10" id="edit_prefix" />
         </div>
-    </div>
-</div>
+        <x-input name="name" label="Nama" :required="true" id="edit_name" />
+        <x-textarea name="description" label="Deskripsi" rows="2" id="edit_description" />
+        <x-input type="number" name="sort_order" label="Urutan" min="0" id="edit_sort_order" />
+
+        <label class="inline-flex items-center gap-2 text-sm text-[var(--text-secondary)]">
+            <input class="h-4 w-4 rounded border-[var(--surface-glass-border)] text-primary-500 focus:ring-primary-500" type="checkbox" name="is_active" id="edit_is_active" value="1">
+            Aktif
+        </label>
+
+        <div class="flex flex-col-reverse gap-2 border-t border-[var(--surface-glass-border)] pt-4 sm:flex-row sm:justify-end">
+            <x-button type="button" variant="secondary" x-on:click="$dispatch('close-modal', 'editTypeModal')">Batal</x-button>
+            <x-button type="submit">Simpan</x-button>
+        </div>
+    </form>
+</x-modal>
 @endsection
 
 @push('scripts')
@@ -212,7 +166,7 @@ function editItem(item) {
     document.getElementById('edit_description').value = item.description || '';
     document.getElementById('edit_sort_order').value = item.sort_order;
     document.getElementById('edit_is_active').checked = item.is_active;
-    new bootstrap.Modal(document.getElementById('editModal')).show();
+    window.dispatchEvent(new CustomEvent('open-modal', { detail: 'editTypeModal' }));
 }
 </script>
 @endpush

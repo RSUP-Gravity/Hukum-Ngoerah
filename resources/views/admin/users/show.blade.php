@@ -12,186 +12,184 @@
 @endsection
 
 @section('content')
-<div class="container-fluid">
-    <div class="row">
+<div class="space-y-6">
+    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+            <h1 class="text-2xl font-semibold text-[var(--text-primary)]">{{ $user->name }}</h1>
+            <p class="mt-1 text-sm text-[var(--text-secondary)]">Profil pengguna</p>
+        </div>
+        <x-button href="{{ route('admin.users.index') }}" variant="secondary">
+            <i class="bi bi-arrow-left"></i>
+            Kembali
+        </x-button>
+    </div>
+
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {{-- Main Info --}}
-        <div class="col-lg-4">
-            <div class="glass-card mb-4">
-                <div class="card-body text-center">
-                    <div class="mb-3">
-                        @if($user->avatar)
-                            <img src="{{ Storage::url($user->avatar) }}" alt="{{ $user->name }}" 
-                                 class="rounded-circle" width="100" height="100" style="object-fit: cover;">
-                        @else
-                            <div class="rounded-circle bg-primary d-inline-flex align-items-center justify-content-center text-white" 
-                                 style="width: 100px; height: 100px; font-size: 2.5rem;">
-                                {{ strtoupper(substr($user->name, 0, 1)) }}
-                            </div>
-                        @endif
-                    </div>
-                    <h4 class="mb-1">{{ $user->name }}</h4>
-                    <p class="text-muted mb-2">{{ $user->username }}</p>
-                    
-                    <span class="badge bg-primary-subtle text-primary mb-3">
-                        {{ $user->role->display_name ?? 'No Role' }}
-                    </span>
-                    
-                    @if($user->is_active)
-                        <span class="badge bg-success">Aktif</span>
+        <div class="space-y-6">
+            <x-glass-card :hover="false" class="p-6 text-center">
+                <div class="mx-auto mb-4 h-24 w-24 overflow-hidden rounded-full border border-[var(--surface-glass-border)] bg-[var(--surface-glass)]">
+                    @if($user->avatar)
+                        <img src="{{ Storage::url($user->avatar) }}" alt="{{ $user->name }}" class="h-full w-full object-cover">
                     @else
-                        <span class="badge bg-danger">Nonaktif</span>
+                        <div class="flex h-full w-full items-center justify-center text-3xl font-semibold text-[var(--text-primary)]">
+                            {{ strtoupper(substr($user->name, 0, 1)) }}
+                        </div>
                     @endif
                 </div>
-                <div class="card-footer bg-transparent">
-                    <div class="d-flex justify-content-center gap-2">
-                        @can('users.edit')
-                        <a href="{{ route('admin.users.edit', $user) }}" class="btn btn-sm btn-outline-primary">
-                            <i class="bi bi-pencil me-1"></i>Edit
-                        </a>
-                        @endcan
-                        @can('users.reset_password')
+                <h2 class="text-lg font-semibold text-[var(--text-primary)]">{{ $user->name }}</h2>
+                <p class="mt-1 text-sm text-[var(--text-tertiary)]">{{ $user->username }}</p>
+
+                <div class="mt-3 flex flex-wrap justify-center gap-2">
+                    <x-badge type="info" size="sm">{{ $user->role->display_name ?? 'No Role' }}</x-badge>
+                    @if($user->is_active)
+                        <x-badge type="success" size="sm">Aktif</x-badge>
+                    @else
+                        <x-badge type="expired" size="sm">Nonaktif</x-badge>
+                    @endif
+                </div>
+
+                <div class="mt-5 flex flex-wrap justify-center gap-2">
+                    @can('users.edit')
+                        <x-button href="{{ route('admin.users.edit', $user) }}" size="sm" variant="secondary">
+                            <i class="bi bi-pencil"></i>
+                            Edit
+                        </x-button>
+                    @endcan
+                    @can('users.reset_password')
                         <form action="{{ route('admin.users.reset-password', $user) }}" method="POST"
                               onsubmit="return confirm('Yakin ingin mereset password?')">
                             @csrf
-                            <button type="submit" class="btn btn-sm btn-outline-secondary">
-                                <i class="bi bi-key me-1"></i>Reset Password
-                            </button>
+                            <x-button type="submit" size="sm" variant="ghost">
+                                <i class="bi bi-key"></i>
+                                Reset Password
+                            </x-button>
                         </form>
-                        @endcan
+                    @endcan
+                </div>
+            </x-glass-card>
+
+            <x-glass-card :hover="false" class="p-6">
+                <h3 class="text-sm font-semibold text-[var(--text-primary)]">Informasi Kontak</h3>
+                <dl class="mt-4 space-y-3 text-sm">
+                    <div class="flex items-start justify-between gap-4">
+                        <dt class="text-[var(--text-secondary)]">Email</dt>
+                        <dd class="text-right text-[var(--text-primary)]">{{ $user->email ?? '-' }}</dd>
                     </div>
-                </div>
-            </div>
-            
-            {{-- Contact Info --}}
-            <div class="glass-card mb-4">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">Informasi Kontak</h5>
-                </div>
-                <div class="card-body">
-                    <dl class="row mb-0">
-                        <dt class="col-sm-4 text-muted">Email</dt>
-                        <dd class="col-sm-8">{{ $user->email ?? '-' }}</dd>
-                        
-                        <dt class="col-sm-4 text-muted">Telepon</dt>
-                        <dd class="col-sm-8">{{ $user->phone ?? '-' }}</dd>
-                        
-                        <dt class="col-sm-4 text-muted">NIP</dt>
-                        <dd class="col-sm-8 mb-0">{{ $user->employee_id ?? '-' }}</dd>
-                    </dl>
-                </div>
-            </div>
-            
-            {{-- Organization Info --}}
-            <div class="glass-card mb-4">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">Organisasi</h5>
-                </div>
-                <div class="card-body">
-                    <dl class="row mb-0">
-                        <dt class="col-sm-4 text-muted">Unit</dt>
-                        <dd class="col-sm-8">{{ $user->unit->name ?? '-' }}</dd>
-                        
-                        <dt class="col-sm-4 text-muted">Direktorat</dt>
-                        <dd class="col-sm-8">{{ $user->unit->directorate->name ?? '-' }}</dd>
-                        
-                        <dt class="col-sm-4 text-muted">Jabatan</dt>
-                        <dd class="col-sm-8 mb-0">{{ $user->position->name ?? '-' }}</dd>
-                    </dl>
-                </div>
-            </div>
+                    <div class="flex items-start justify-between gap-4">
+                        <dt class="text-[var(--text-secondary)]">Telepon</dt>
+                        <dd class="text-right text-[var(--text-primary)]">{{ $user->phone ?? '-' }}</dd>
+                    </div>
+                    <div class="flex items-start justify-between gap-4">
+                        <dt class="text-[var(--text-secondary)]">NIP</dt>
+                        <dd class="text-right text-[var(--text-primary)]">{{ $user->employee_id ?? '-' }}</dd>
+                    </div>
+                </dl>
+            </x-glass-card>
+
+            <x-glass-card :hover="false" class="p-6">
+                <h3 class="text-sm font-semibold text-[var(--text-primary)]">Organisasi</h3>
+                <dl class="mt-4 space-y-3 text-sm">
+                    <div class="flex items-start justify-between gap-4">
+                        <dt class="text-[var(--text-secondary)]">Unit</dt>
+                        <dd class="text-right text-[var(--text-primary)]">{{ $user->unit->name ?? '-' }}</dd>
+                    </div>
+                    <div class="flex items-start justify-between gap-4">
+                        <dt class="text-[var(--text-secondary)]">Direktorat</dt>
+                        <dd class="text-right text-[var(--text-primary)]">{{ $user->unit->directorate->name ?? '-' }}</dd>
+                    </div>
+                    <div class="flex items-start justify-between gap-4">
+                        <dt class="text-[var(--text-secondary)]">Jabatan</dt>
+                        <dd class="text-right text-[var(--text-primary)]">{{ $user->position->name ?? '-' }}</dd>
+                    </div>
+                </dl>
+            </x-glass-card>
         </div>
-        
+
         {{-- Permissions & Activity --}}
-        <div class="col-lg-8">
-            {{-- Permissions --}}
-            <div class="glass-card mb-4">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">Hak Akses</h5>
-                </div>
-                <div class="card-body">
+        <div class="space-y-6 lg:col-span-2">
+            <x-glass-card :hover="false" class="p-6">
+                <h3 class="text-sm font-semibold text-[var(--text-primary)]">Hak Akses</h3>
+                <div class="mt-4">
                     @if($user->role && $user->role->permissions->isNotEmpty())
                         @php
                             $permissionsByModule = $user->role->permissions->groupBy('module');
                         @endphp
-                        
-                        <div class="row">
+                        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                             @foreach($permissionsByModule as $module => $permissions)
-                            <div class="col-md-6 mb-3">
-                                <h6 class="text-uppercase text-muted small mb-2">{{ ucfirst($module) }}</h6>
-                                <div class="d-flex flex-wrap gap-1">
-                                    @foreach($permissions as $permission)
-                                    <span class="badge bg-light text-dark">{{ $permission->display_name }}</span>
-                                    @endforeach
+                                <div class="rounded-lg border border-[var(--surface-glass-border)] bg-[var(--surface-glass)] p-3">
+                                    <h4 class="text-xs font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">{{ ucfirst($module) }}</h4>
+                                    <div class="mt-2 flex flex-wrap gap-2">
+                                        @foreach($permissions as $permission)
+                                            <x-badge type="default" size="sm">{{ $permission->display_name }}</x-badge>
+                                        @endforeach
+                                    </div>
                                 </div>
-                            </div>
                             @endforeach
                         </div>
                     @else
-                        <p class="text-muted mb-0">Tidak ada hak akses khusus.</p>
+                        <p class="text-sm text-[var(--text-tertiary)]">Tidak ada hak akses khusus.</p>
                     @endif
                 </div>
-            </div>
-            
-            {{-- Login Activity --}}
-            <div class="glass-card mb-4">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">Aktivitas Login</h5>
-                </div>
-                <div class="card-body">
-                    <dl class="row mb-0">
-                        <dt class="col-sm-4 text-muted">Login Terakhir</dt>
-                        <dd class="col-sm-8">
+            </x-glass-card>
+
+            <x-glass-card :hover="false" class="p-6">
+                <h3 class="text-sm font-semibold text-[var(--text-primary)]">Aktivitas Login</h3>
+                <dl class="mt-4 space-y-3 text-sm">
+                    <div class="flex items-start justify-between gap-4">
+                        <dt class="text-[var(--text-secondary)]">Login Terakhir</dt>
+                        <dd class="text-right text-[var(--text-primary)]">
                             @if($user->last_login_at)
                                 {{ $user->last_login_at->format('d F Y H:i') }}
-                                <small class="text-muted">({{ $user->last_login_at->diffForHumans() }})</small>
+                                <span class="text-xs text-[var(--text-tertiary)]">({{ $user->last_login_at->diffForHumans() }})</span>
                             @else
-                                <span class="text-muted">Belum pernah login</span>
+                                <span class="text-[var(--text-tertiary)]">Belum pernah login</span>
                             @endif
                         </dd>
-                        
-                        <dt class="col-sm-4 text-muted">IP Terakhir</dt>
-                        <dd class="col-sm-8">{{ $user->last_login_ip ?? '-' }}</dd>
-                        
-                        <dt class="col-sm-4 text-muted">Dibuat</dt>
-                        <dd class="col-sm-8">{{ $user->created_at->format('d F Y H:i') }}</dd>
-                        
-                        <dt class="col-sm-4 text-muted">Diperbarui</dt>
-                        <dd class="col-sm-8 mb-0">{{ $user->updated_at->format('d F Y H:i') }}</dd>
-                    </dl>
-                </div>
-            </div>
-            
-            {{-- Recent Activity Logs --}}
-            <div class="glass-card">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">Aktivitas Terbaru</h5>
-                </div>
-                <div class="card-body p-0">
-                    <div class="list-group list-group-flush" style="max-height: 400px; overflow-y: auto;">
-                        @forelse($recentLogs as $log)
-                        <div class="list-group-item">
-                            <div class="d-flex justify-content-between">
+                    </div>
+                    <div class="flex items-start justify-between gap-4">
+                        <dt class="text-[var(--text-secondary)]">IP Terakhir</dt>
+                        <dd class="text-right text-[var(--text-primary)]">{{ $user->last_login_ip ?? '-' }}</dd>
+                    </div>
+                    <div class="flex items-start justify-between gap-4">
+                        <dt class="text-[var(--text-secondary)]">Dibuat</dt>
+                        <dd class="text-right text-[var(--text-primary)]">{{ $user->created_at->format('d F Y H:i') }}</dd>
+                    </div>
+                    <div class="flex items-start justify-between gap-4">
+                        <dt class="text-[var(--text-secondary)]">Diperbarui</dt>
+                        <dd class="text-right text-[var(--text-primary)]">{{ $user->updated_at->format('d F Y H:i') }}</dd>
+                    </div>
+                </dl>
+            </x-glass-card>
+
+            <x-glass-card :hover="false" class="p-6">
+                <h3 class="text-sm font-semibold text-[var(--text-primary)]">Aktivitas Terbaru</h3>
+                <div class="mt-4 max-h-[400px] space-y-3 overflow-y-auto pr-2 custom-scrollbar">
+                    @forelse($recentLogs as $log)
+                        <div class="rounded-lg border border-[var(--surface-glass-border)] bg-[var(--surface-glass)] p-4">
+                            <div class="flex items-start justify-between gap-3">
                                 <div>
-                                    <span class="badge bg-light text-dark me-2">{{ strtoupper($log->action) }}</span>
-                                    <span>{{ $log->module }}</span>
-                                    @if($log->entity_name)
-                                        <span class="text-muted">- {{ $log->entity_name }}</span>
+                                    <div class="flex flex-wrap items-center gap-2 text-xs text-[var(--text-tertiary)]">
+                                        <x-badge type="default" size="sm">{{ strtoupper($log->action) }}</x-badge>
+                                        <span class="text-[var(--text-primary)]">{{ $log->module }}</span>
+                                        @if($log->entity_name)
+                                            <span class="text-[var(--text-tertiary)]">- {{ $log->entity_name }}</span>
+                                        @endif
+                                    </div>
+                                    @if($log->description)
+                                        <div class="mt-2 text-xs text-[var(--text-tertiary)]">{{ $log->description }}</div>
                                     @endif
                                 </div>
-                                <small class="text-muted">{{ $log->created_at->format('d/m/Y H:i') }}</small>
+                                <div class="text-xs text-[var(--text-tertiary)]">{{ $log->created_at->format('d/m/Y H:i') }}</div>
                             </div>
-                            @if($log->description)
-                                <small class="text-muted">{{ $log->description }}</small>
-                            @endif
                         </div>
-                        @empty
-                        <div class="list-group-item text-center text-muted py-4">
+                    @empty
+                        <div class="rounded-lg border border-dashed border-[var(--surface-glass-border)] p-6 text-center text-xs text-[var(--text-tertiary)]">
                             Belum ada aktivitas tercatat
                         </div>
-                        @endforelse
-                    </div>
+                    @endforelse
                 </div>
-            </div>
+            </x-glass-card>
         </div>
     </div>
 </div>
