@@ -163,7 +163,7 @@
                 </a>
 
                 <!-- Export Report -->
-                <a href="{{ route('reports.index') }}" 
+                <a href="{{ route('documents.export') }}" 
                    class="flex flex-col items-center p-4 rounded-xl border border-[var(--surface-glass-border)] hover:border-[var(--color-primary)] hover:bg-[var(--surface-glass)] transition-all group">
                     <div class="w-12 h-12 rounded-xl bg-green-500/10 flex items-center justify-center mb-2 group-hover:bg-green-500/20 transition-colors">
                         <svg class="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">

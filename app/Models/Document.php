@@ -116,11 +116,27 @@ class Document extends Model
     }
 
     /**
+     * Alias for documentType relationship
+     */
+    public function type(): BelongsTo
+    {
+        return $this->documentType();
+    }
+
+    /**
      * Get the document category
      */
     public function documentCategory(): BelongsTo
     {
         return $this->belongsTo(DocumentCategory::class);
+    }
+
+    /**
+     * Alias for documentCategory relationship
+     */
+    public function category(): BelongsTo
+    {
+        return $this->documentCategory();
     }
 
     /**
@@ -350,6 +366,36 @@ class Document extends Model
               ->orWhere('title', 'like', "%{$search}%")
               ->orWhere('keywords', 'like', "%{$search}%")
               ->orWhere('description', 'like', "%{$search}%");
+        });
+    }
+
+    /**
+     * Scope: Filter documents accessible by user
+     * Based on user's unit, directorate, or role
+     */
+    public function scopeAccessibleBy($query, $user)
+    {
+        // Admin can see all documents
+        if ($user->isAdmin()) {
+            return $query;
+        }
+
+        return $query->where(function ($q) use ($user) {
+            // Documents in user's unit
+            if ($user->unit_id) {
+                $q->orWhere('unit_id', $user->unit_id);
+            }
+            
+            // Documents in user's directorate (if user has directorate access)
+            if ($user->directorate_id) {
+                $q->orWhere('directorate_id', $user->directorate_id);
+            }
+            
+            // Public documents (published status)
+            $q->orWhere('status', self::STATUS_PUBLISHED);
+            
+            // Documents created by user
+            $q->orWhere('created_by', $user->id);
         });
     }
 
