@@ -450,6 +450,55 @@ class Document extends Model
     }
 
     /**
+     * Check if user can access (view) this document
+     */
+    public function isAccessibleBy($user): bool
+    {
+        return $this->hasAccess($user, DocumentAccess::PERM_VIEW);
+    }
+
+    /**
+     * Check if user has permission for a document action
+     */
+    public function hasAccess($user, string $permission = DocumentAccess::PERM_VIEW): bool
+    {
+        if ($user->isAdmin() || $user->hasRole('super_admin')) {
+            return true;
+        }
+
+        if ($this->created_by === $user->id) {
+            return true;
+        }
+
+        $accessEntries = $this->accessPermissions()
+            ->valid()
+            ->forUser($user)
+            ->get();
+
+        foreach ($accessEntries as $access) {
+            if ($access->hasPermission($permission)) {
+                return true;
+            }
+        }
+
+        $defaultAccess = $this->status === self::STATUS_PUBLISHED;
+
+        if ($user->unit_id && $this->unit_id === $user->unit_id) {
+            $defaultAccess = true;
+        }
+
+        if ($user->directorate_id && $this->directorate_id === $user->directorate_id) {
+            $defaultAccess = true;
+        }
+
+        if (in_array($permission, [DocumentAccess::PERM_VIEW, DocumentAccess::PERM_DOWNLOAD], true)) {
+            return $defaultAccess;
+        }
+
+        return false;
+    }
+
+    /**
      * Check if document is expired
      */
     public function isExpired(): bool
