@@ -39,10 +39,10 @@
             </div>
             <div class="lg:col-span-3">
                 <label class="text-sm font-medium text-[var(--text-primary)]">Jenis Dokumen</label>
-                <select name="type_id" class="glass-input mt-2">
+                <select name="document_type_id" class="glass-input mt-2">
                     <option value="">Semua Jenis</option>
-                    @foreach($types as $type)
-                        <option value="{{ $type->id }}" {{ request('type_id') == $type->id ? 'selected' : '' }}>
+                    @foreach($documentTypes as $type)
+                        <option value="{{ $type->id }}" {{ request('document_type_id') == $type->id ? 'selected' : '' }}>
                             {{ $type->name }}
                         </option>
                     @endforeach
@@ -142,7 +142,7 @@
             <label class="block text-sm font-medium text-[var(--text-primary)]">Jenis Dokumen <span class="text-red-500" aria-hidden="true">*</span></label>
             <select class="glass-input" name="document_type_id" required>
                 <option value="">Pilih Jenis</option>
-                @foreach($types as $type)
+                @foreach($documentTypes as $type)
                     <option value="{{ $type->id }}">{{ $type->name }}</option>
                 @endforeach
             </select>
