@@ -1,5 +1,8 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" x-data x-bind:class="{ 'dark': localStorage.getItem('darkMode') === 'true' }">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" x-data x-bind:class="{
+    'dark': localStorage.getItem('darkMode') === 'true' || (!localStorage.getItem('darkMode') && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches),
+    'light': localStorage.getItem('darkMode') === 'false' || (!localStorage.getItem('darkMode') && (!window.matchMedia || !window.matchMedia('(prefers-color-scheme: dark)').matches))
+}">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -8,12 +11,43 @@
     <title>{{ $title ?? 'Login' }} - {{ config('app.name', 'Hukum RS Ngoerah') }}</title>
 
     <!-- Favicon -->
-    <link rel="icon" type="image/png" href="{{ asset('images/favicon.png') }}">
+    <link rel="icon" type="image/png" href="{{ asset('images/logo kemenkes.png') }}">
+
+    <style>
+        html { background: #F8FAFC; color: #0B1220; }
+        html.dark { background: #0F172A; color: #F1F5F9; }
+        body { background: inherit; color: inherit; }
+
+        /* Page loader overlay - removed to eliminate transition flash */
+        #page-loader {
+            display: none !important;
+        }
+    </style>
+
+    <script>
+        (function() {
+            const stored = localStorage.getItem('darkMode');
+            const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const isDark = stored === 'true' || (stored === null && prefersDark);
+
+            if (isDark) {
+                document.documentElement.classList.add('dark');
+                document.documentElement.classList.remove('light');
+                document.documentElement.style.backgroundColor = '#0F172A';
+                document.documentElement.style.color = '#F1F5F9';
+            } else {
+                document.documentElement.classList.add('light');
+                document.documentElement.classList.remove('dark');
+                document.documentElement.style.backgroundColor = '#F8FAFC';
+                document.documentElement.style.color = '#0B1220';
+            }
+        })();
+    </script>
 
     <!-- Scripts & Styles -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] antialiased">
+<body class="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] antialiased loading">
     <div class="min-h-screen flex">
         <!-- Left Side - Branding -->
         <div class="hidden lg:flex lg:w-1/2 relative bg-gradient-to-br from-primary-500 to-lime-500 p-12 flex-col justify-between">
@@ -32,9 +66,9 @@
             <!-- Logo & Title -->
             <div class="relative z-10">
                 <div class="flex items-center gap-4 mb-8">
-                    <img 
-                        src="{{ asset('images/logo-white.png') }}" 
-                        alt="Logo RS Ngoerah" 
+                    <img
+                        src="{{ asset('images/logo-white.png') }}"
+                        alt="Logo RS Ngoerah"
                         class="h-16 w-16 object-contain"
                         onerror="this.style.display='none'"
                     >
@@ -94,9 +128,9 @@
             <div class="w-full max-w-md">
                 <!-- Mobile Logo -->
                 <div class="lg:hidden text-center mb-8">
-                    <img 
-                        src="{{ asset('images/logo.png') }}" 
-                        alt="Logo RS Ngoerah" 
+                    <img
+                        src="{{ asset('images/Logo-RS-New.png') }}"
+                        alt="Logo RS Ngoerah"
                         class="h-20 w-20 mx-auto object-contain mb-4"
                         onerror="this.style.display='none'"
                     >
@@ -105,7 +139,7 @@
 
                 <!-- Dark Mode Toggle -->
                 <div class="absolute top-4 right-4">
-                    <button 
+                    <button
                         @click="darkMode.toggle()"
                         class="p-2 rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-glass)] transition-colors"
                     >
@@ -122,5 +156,22 @@
             </div>
         </div>
     </div>
+
+    <script>
+        // Enable transitions after page load to prevent flash
+        window.addEventListener('DOMContentLoaded', function() {
+            // Small delay to ensure styles are applied
+            setTimeout(() => {
+                document.body.classList.remove('loading');
+            }, 50);
+        });
+
+        // Fallback for already loaded pages
+        if (document.readyState === 'complete' || document.readyState === 'interactive') {
+            setTimeout(() => {
+                document.body.classList.remove('loading');
+            }, 50);
+        }
+    </script>
 </body>
 </html>

@@ -16,24 +16,28 @@ window.Chart = Chart;
 window.darkMode = {
     init() {
         // Check localStorage or system preference
-        if (localStorage.getItem('darkMode') === 'true' ||
-            (!localStorage.getItem('darkMode') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-            document.documentElement.classList.add('dark');
-        }
+        const stored = localStorage.getItem('darkMode');
+        const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const isDark = stored === 'true' || (stored === null && prefersDark);
+        document.documentElement.classList.toggle('dark', isDark);
+        document.documentElement.classList.toggle('light', !isDark);
     },
 
     toggle() {
         const isDark = document.documentElement.classList.toggle('dark');
+        document.documentElement.classList.toggle('light', !isDark);
         localStorage.setItem('darkMode', isDark);
     },
 
     enable() {
         document.documentElement.classList.add('dark');
+        document.documentElement.classList.remove('light');
         localStorage.setItem('darkMode', 'true');
     },
 
     disable() {
         document.documentElement.classList.remove('dark');
+        document.documentElement.classList.add('light');
         localStorage.setItem('darkMode', 'false');
     },
 
@@ -84,10 +88,12 @@ const sidebar = () => ({
     expanded: localStorage.getItem('sidebarExpanded') !== 'false',
     mobileOpen: false,
     hoverExpanded: false,
+    isAnimating: false,
     toggle() {
         this.expanded = !this.expanded;
         localStorage.setItem('sidebarExpanded', this.expanded);
         this.hoverExpanded = false;
+        this.isAnimating = true;
     },
     toggleMobile() {
         this.mobileOpen = !this.mobileOpen;
@@ -96,12 +102,22 @@ const sidebar = () => ({
         if (!this.expanded) {
             this.expanded = true;
             this.hoverExpanded = true;
+            this.isAnimating = true;
         }
     },
     collapseOnLeave() {
         if (this.hoverExpanded) {
             this.expanded = false;
             this.hoverExpanded = false;
+            this.isAnimating = true;
+        }
+    },
+    handleTransitionEnd(event) {
+        if (!event.target.classList.contains('glass-sidebar')) {
+            return;
+        }
+        if (event.propertyName === 'width') {
+            this.isAnimating = false;
         }
     }
 });

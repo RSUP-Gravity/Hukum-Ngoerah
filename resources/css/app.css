@@ -28,26 +28,26 @@
         --gradient-primary-hover: linear-gradient(135deg, #008A99, #83A02D);
 
         /* Background */
-        --bg-primary: #F5F7FB;
-        --bg-secondary: #EEF2F7;
+        --bg-primary: #F8FAFC;
+        --bg-secondary: #F1F5F9;
 
         /* Surface (Glassmorphism - Light) */
-        --surface-glass: rgba(255, 255, 255, 0.7);
-        --surface-glass-elevated: rgba(255, 255, 255, 0.9);
+        --surface-glass: rgba(255, 255, 255, 0.85);
+        --surface-glass-elevated: rgba(255, 255, 255, 0.98);
         --surface-elevated: var(--surface-glass-elevated);
-        --surface-glass-border: rgba(0, 160, 176, 0.2);
-        --surface-glass-border-hover: rgba(0, 160, 176, 0.4);
-        --surface-glass-highlight: rgba(255, 255, 255, 0.85);
+        --surface-glass-border: rgba(15, 23, 42, 0.1);
+        --surface-glass-border-hover: rgba(0, 160, 176, 0.3);
+        --surface-glass-highlight: rgba(255, 255, 255, 1);
 
         /* Text */
         --text-primary: #0B1220;
-        --text-secondary: #4B5A70;
-        --text-tertiary: #7C8AA3;
+        --text-secondary: #334155;
+        --text-tertiary: #64748B;
         --text-inverse: #F1F5F9;
 
         /* Shadows */
-        --shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.08);
-        --shadow-glass-hover: 0 12px 32px rgba(0, 0, 0, 0.12);
+        --shadow-glass: 0 8px 24px rgba(15, 23, 42, 0.08);
+        --shadow-glass-hover: 0 12px 32px rgba(15, 23, 42, 0.12);
         --shadow-elevated: 0 24px 64px rgba(0, 0, 0, 0.2);
 
         /* Focus */
@@ -148,6 +148,10 @@
         color: var(--text-primary);
     }
 
+    html:not(.dark) .glass-input {
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    }
+
     .glass-input:focus {
         @apply outline-none;
         border-color: var(--color-primary);
@@ -189,10 +193,19 @@
         color: var(--text-primary);
     }
 
+    html:not(.dark) .btn-secondary {
+        background: var(--surface-glass-elevated);
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    }
+
     .btn-secondary:hover {
         background: var(--surface-glass-elevated);
         border-color: var(--color-primary);
         color: var(--color-primary);
+    }
+
+    html:not(.dark) .btn-secondary:hover {
+        box-shadow: 0 4px 10px rgba(15, 23, 42, 0.08);
     }
 
     .btn-secondary:focus-visible {
@@ -210,6 +223,10 @@
     .btn-ghost:hover {
         background: var(--surface-glass);
         color: var(--color-primary);
+    }
+
+    html:not(.dark) .btn-ghost:hover {
+        background: var(--surface-glass-elevated);
     }
 
     .btn-ghost:focus-visible {
@@ -384,6 +401,10 @@
         color: var(--text-secondary);
     }
 
+    html:not(.dark) .glass-table thead {
+        background: var(--surface-glass);
+    }
+
     .glass-table thead th {
         @apply px-4 py-3 border-b;
         border-color: var(--surface-glass-border);
@@ -396,6 +417,10 @@
 
     .glass-table tbody tr:hover {
         background: var(--surface-glass);
+    }
+
+    html:not(.dark) .glass-table tbody tr:hover {
+        background: var(--surface-glass-elevated);
     }
 
     .glass-table.no-hover tbody tr:hover {
@@ -475,6 +500,10 @@
         border-right: 1px solid var(--surface-glass-border);
     }
 
+    html:not(.dark) .glass-sidebar {
+        box-shadow: 4px 0 20px rgba(15, 23, 42, 0.04);
+    }
+
     /* Glass Navbar */
     .glass-navbar {
         @apply fixed top-0 right-0 z-30 transition-all duration-200;
@@ -485,10 +514,21 @@
         border-bottom: 1px solid var(--surface-glass-border);
     }
 
+    html:not(.dark) .glass-navbar {
+        box-shadow: 0 1px 0 rgba(15, 23, 42, 0.06), 0 8px 20px rgba(15, 23, 42, 0.04);
+    }
+
+    .dark .glass-sidebar,
+    .dark .glass-navbar {
+        box-shadow: none;
+    }
+
     /* Sidebar Menu Item */
     .sidebar-item {
-        @apply flex items-center gap-3 px-4 py-2.5 mx-3 rounded-lg transition-all duration-200;
+        @apply flex items-center gap-3 px-4 py-3 mx-3 rounded-lg transition-all duration-200;
         color: var(--text-secondary);
+        border-left: 3px solid transparent;
+        min-height: 44px;
     }
 
     .sidebar-item:hover {
@@ -496,9 +536,26 @@
         color: var(--text-primary);
     }
 
+    html:not(.dark) .sidebar-item:hover {
+        background: var(--surface-glass-elevated);
+    }
+
     .sidebar-item.active {
         background: var(--gradient-primary);
         color: white;
+        border-left-color: var(--color-lime);
+        box-shadow: 0 4px 15px rgba(0, 160, 176, 0.3);
+    }
+
+    .dark .sidebar-item.active {
+        border-left-color: var(--color-lime);
+        box-shadow: 0 4px 20px rgba(0, 196, 214, 0.4);
+    }
+
+    .sidebar-item:focus-visible {
+        @apply outline-none ring-2;
+        ring-color: var(--color-primary);
+        ring-offset-2: 2px;
     }
 
     /* Document Status Row Highlights */
@@ -623,73 +680,28 @@
 }
 
 /* ============================================
-   Page Transition Animations
+   Page Transition Animations (DISABLED)
    ============================================ */
 
-/* Page transition overlay */
+/* Page load animations disabled to prevent refresh flash */
 .page-transition-overlay {
-    display: none;
+    display: none !important;
 }
 
-.page-transition-overlay.active {
-    opacity: 1;
-    transform: translateY(0);
-}
-
-.page-transition-overlay.exit {
-    opacity: 0;
-    transform: translateY(100%);
-}
-
-/* Page content enter animation */
 .page-content {
-    opacity: 1;
-    transform: none;
-    transition: none;
+    opacity: 1 !important;
+    transform: none !important;
 }
 
-.page-content.page-enter-active {
-    opacity: 1;
-    transform: none;
-}
-
-/* Staggered children animation */
-.page-content.page-enter-active > *:nth-child(1) { transition-delay: 0ms; }
-.page-content.page-enter-active > *:nth-child(2) { transition-delay: 50ms; }
-.page-content.page-enter-active > *:nth-child(3) { transition-delay: 100ms; }
-.page-content.page-enter-active > *:nth-child(4) { transition-delay: 150ms; }
-.page-content.page-enter-active > *:nth-child(5) { transition-delay: 200ms; }
-
-/* Glass card subtle entrance */
+/* Glass card - no entrance animation on page load */
 .glass-card {
-    opacity: 1;
-    transform: none;
-    animation: none;
+    opacity: 1 !important;
+    transform: none !important;
 }
 
-.glass-card:nth-child(1) { animation-delay: 0.05s; }
-.glass-card:nth-child(2) { animation-delay: 0.1s; }
-.glass-card:nth-child(3) { animation-delay: 0.15s; }
-.glass-card:nth-child(4) { animation-delay: 0.2s; }
-.glass-card:nth-child(5) { animation-delay: 0.25s; }
-.glass-card:nth-child(6) { animation-delay: 0.3s; }
-
-@keyframes glassCardEnter {
-    0% {
-        opacity: 0;
-        transform: translateY(8px) scale(0.98);
-    }
-    100% {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-    }
-}
-
-/* Page leave animation */
-.page-leaving .page-content {
-    opacity: 1;
-    transform: none;
-    transition: none;
+/* But keep hover animations active */
+.glass-card:hover {
+    transform: translateY(-2px) !important;
 }
 
 /* Skeleton loading animation */
@@ -1039,7 +1051,7 @@
         margin-right: -12px;
         border-radius: 0;
     }
-    
+
     .swipe-enabled-card .card-body {
         padding-left: 16px;
         padding-right: 16px;
@@ -1051,7 +1063,7 @@
     .swipe-container {
         touch-action: auto;
     }
-    
+
     .swipe-actions-left,
     .swipe-actions-right {
         display: none !important;
@@ -1104,4 +1116,3 @@
         transform: translateX(-50%) rotate(360deg);
     }
 }
-

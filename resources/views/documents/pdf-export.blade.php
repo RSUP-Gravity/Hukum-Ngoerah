@@ -9,53 +9,53 @@
             margin: 15mm 10mm 20mm 10mm;
             size: A4 landscape;
         }
-        
+
         body {
             font-family: 'DejaVu Sans', sans-serif;
             font-size: 9px;
             line-height: 1.4;
             color: #1e293b;
         }
-        
+
         .header {
             position: relative;
             margin-bottom: 15px;
             padding-bottom: 10px;
             border-bottom: 2px solid #00A0B0;
         }
-        
+
         .header-table {
             width: 100%;
         }
-        
+
         .logo-cell {
             width: 60px;
             vertical-align: middle;
         }
-        
+
         .logo {
             width: 50px;
             height: auto;
         }
-        
+
         .title-cell {
             vertical-align: middle;
             text-align: center;
         }
-        
+
         .hospital-name {
             font-size: 14px;
             font-weight: bold;
             color: #00A0B0;
             margin: 0;
         }
-        
+
         .hospital-subtitle {
             font-size: 10px;
             color: #64748B;
             margin: 2px 0 0 0;
         }
-        
+
         .report-title {
             font-size: 13px;
             font-weight: bold;
@@ -63,18 +63,18 @@
             margin: 10px 0 5px 0;
             text-transform: uppercase;
         }
-        
+
         .report-date {
             font-size: 9px;
             color: #64748B;
         }
-        
+
         .date-cell {
             width: 80px;
             vertical-align: middle;
             text-align: right;
         }
-        
+
         .filters-info {
             background-color: #f8fafc;
             border: 1px solid #e2e8f0;
@@ -83,21 +83,21 @@
             margin-bottom: 12px;
             font-size: 8px;
         }
-        
+
         .filters-info strong {
             color: #00A0B0;
         }
-        
+
         table.data-table {
             width: 100%;
             border-collapse: collapse;
             margin-bottom: 10px;
         }
-        
+
         table.data-table thead tr {
             background: linear-gradient(135deg, #00A0B0, #00B4C8);
         }
-        
+
         table.data-table thead th {
             color: white;
             font-weight: bold;
@@ -108,29 +108,29 @@
             letter-spacing: 0.5px;
             border-bottom: 2px solid #007a87;
         }
-        
+
         table.data-table tbody tr {
             border-bottom: 1px solid #e2e8f0;
         }
-        
+
         table.data-table tbody tr:nth-child(even) {
             background-color: #f8fafc;
         }
-        
+
         table.data-table tbody td {
             padding: 6px 5px;
             font-size: 8px;
             vertical-align: top;
         }
-        
+
         .text-center {
             text-align: center;
         }
-        
+
         .text-right {
             text-align: right;
         }
-        
+
         .status-badge {
             display: inline-block;
             padding: 2px 6px;
@@ -139,30 +139,30 @@
             font-weight: bold;
             text-transform: uppercase;
         }
-        
-        .status-active { 
-            background-color: #dcfce7; 
-            color: #166534; 
+
+        .status-active {
+            background-color: #dcfce7;
+            color: #166534;
         }
-        .status-attention { 
-            background-color: #dbeafe; 
-            color: #1e40af; 
+        .status-attention {
+            background-color: #dbeafe;
+            color: #1e40af;
         }
-        .status-warning { 
-            background-color: #fef9c3; 
-            color: #854d0e; 
+        .status-warning {
+            background-color: #fef9c3;
+            color: #854d0e;
         }
-        .status-critical { 
-            background-color: #fef2f2; 
-            color: #991b1b; 
+        .status-critical {
+            background-color: #fef2f2;
+            color: #991b1b;
         }
-        .status-expired { 
-            background-color: #fee2e2; 
-            color: #7f1d1d; 
+        .status-expired {
+            background-color: #fee2e2;
+            color: #7f1d1d;
         }
-        .status-perpetual { 
-            background-color: #f3e8ff; 
-            color: #6b21a8; 
+        .status-perpetual {
+            background-color: #f3e8ff;
+            color: #6b21a8;
         }
         .status-draft {
             background-color: #f1f5f9;
@@ -172,7 +172,7 @@
             background-color: #fef3c7;
             color: #92400e;
         }
-        
+
         .footer {
             position: fixed;
             bottom: 0;
@@ -184,15 +184,15 @@
             border-top: 1px solid #e2e8f0;
             padding-top: 5px;
         }
-        
+
         .footer-table {
             width: 100%;
         }
-        
+
         .page-number:after {
             content: counter(page);
         }
-        
+
         .summary-box {
             margin-top: 15px;
             padding: 10px;
@@ -200,36 +200,36 @@
             border: 1px solid #99f6e4;
             border-radius: 4px;
         }
-        
+
         .summary-box h4 {
             margin: 0 0 8px 0;
             font-size: 10px;
             color: #00A0B0;
         }
-        
+
         .summary-grid {
             display: table;
             width: 100%;
         }
-        
+
         .summary-item {
             display: table-cell;
             width: 16.66%;
             text-align: center;
             padding: 5px;
         }
-        
+
         .summary-count {
             font-size: 14px;
             font-weight: bold;
             color: #1e293b;
         }
-        
+
         .summary-label {
             font-size: 8px;
             color: #64748B;
         }
-        
+
         .col-no { width: 4%; }
         .col-number { width: 12%; }
         .col-title { width: 20%; }
@@ -248,7 +248,7 @@
         <table class="header-table">
             <tr>
                 <td class="logo-cell">
-                    <img src="{{ public_path('images/logo.png') }}" class="logo" alt="Logo RS Ngoerah">
+                    <img src="{{ public_path('images/Logo-RS-New.png') }}" class="logo" alt="Logo RS Ngoerah">
                 </td>
                 <td class="title-cell">
                     <p class="hospital-name">RSUP Prof. Dr. I.G.N.G. Ngoerah</p>
@@ -262,17 +262,17 @@
             </tr>
         </table>
     </div>
-    
+
     {{-- Filter Info --}}
     @if(!empty($activeFilters))
     <div class="filters-info">
-        <strong>Filter Aktif:</strong> 
+        <strong>Filter Aktif:</strong>
         @foreach($activeFilters as $key => $value)
             {{ $key }}: <em>{{ $value }}</em>@if(!$loop->last), @endif
         @endforeach
     </div>
     @endif
-    
+
     {{-- Data Table --}}
     <table class="data-table">
         <thead>
@@ -356,7 +356,7 @@
             @endforelse
         </tbody>
     </table>
-    
+
     {{-- Summary --}}
     <div class="summary-box">
         <h4>Ringkasan Dokumen</h4>
@@ -383,7 +383,7 @@
             </div>
         </div>
     </div>
-    
+
     {{-- Footer --}}
     <div class="footer">
         <table class="footer-table">

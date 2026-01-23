@@ -19,10 +19,10 @@
             <div 
                 class="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center"
                 :class="{
-                    'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400': notification.type === 'success',
-                    'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400': notification.type === 'info',
-                    'bg-yellow-100 text-yellow-600 dark:bg-yellow-900/30 dark:text-yellow-400': notification.type === 'warning',
-                    'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400': notification.type === 'error'
+                    'bg-green-100/70 text-green-600 dark:bg-green-900/30 dark:text-green-400': notification.type === 'success',
+                    'bg-blue-100/70 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400': notification.type === 'info',
+                    'bg-yellow-100/70 text-yellow-600 dark:bg-yellow-900/30 dark:text-yellow-400': notification.type === 'warning',
+                    'bg-red-100/70 text-red-600 dark:bg-red-900/30 dark:text-red-400': notification.type === 'error'
                 }"
             >
                 <!-- Success Icon -->

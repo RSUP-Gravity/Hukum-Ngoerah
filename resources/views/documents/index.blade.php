@@ -21,14 +21,14 @@
             {{-- View Toggle --}}
             <div class="inline-flex overflow-hidden rounded-lg border border-[var(--surface-glass-border)] bg-[var(--surface-glass)]">
                 <button type="button"
-                        class="px-3 py-2 text-sm text-[var(--text-tertiary)] transition-colors hover:text-[var(--text-primary)]"
+                        class="px-3 py-2 text-sm text-[var(--text-secondary)] dark:text-[var(--text-tertiary)] transition-colors hover:text-[var(--text-primary)]"
                         :class="{ 'bg-[var(--surface-glass-elevated)] text-[var(--text-primary)]': viewMode === 'table' }"
                         @click="viewMode = 'table'"
                         title="Tampilan Tabel">
                     <i class="bi bi-list-ul"></i>
                 </button>
                 <button type="button"
-                        class="px-3 py-2 text-sm text-[var(--text-tertiary)] transition-colors hover:text-[var(--text-primary)]"
+                        class="px-3 py-2 text-sm text-[var(--text-secondary)] dark:text-[var(--text-tertiary)] transition-colors hover:text-[var(--text-primary)]"
                         :class="{ 'bg-[var(--surface-glass-elevated)] text-[var(--text-primary)]': viewMode === 'card' }"
                         @click="viewMode = 'card'"
                         title="Tampilan Kartu">
@@ -471,7 +471,7 @@
                     </td>
                     <td class="text-xs font-mono text-[var(--text-tertiary)]">
                         @if(request('search'))
-                            {!! preg_replace('/(' . preg_quote(request('search'), '/') . ')/i', '<mark class="rounded bg-amber-200/60 px-1 text-amber-900 dark:bg-amber-400/20 dark:text-amber-200">$1</mark>', e($document->document_number)) !!}
+                            {!! preg_replace('/(' . preg_quote(request('search'), '/') . ')/i', '<mark class="rounded bg-amber-200/50 px-1 text-amber-900 dark:bg-amber-400/20 dark:text-amber-200">$1</mark>', e($document->document_number)) !!}
                         @else
                             {{ $document->document_number }}
                         @endif
@@ -481,7 +481,7 @@
                             <div class="flex flex-wrap items-center gap-2">
                                 <a href="{{ route('documents.show', $document) }}" class="text-sm font-semibold text-[var(--text-primary)] hover:text-primary-500">
                                     @if(request('search'))
-                                        {!! preg_replace('/(' . preg_quote(request('search'), '/') . ')/i', '<mark class="rounded bg-amber-200/60 px-1 text-amber-900 dark:bg-amber-400/20 dark:text-amber-200">$1</mark>', e(Str::limit($document->title, 50))) !!}
+                                        {!! preg_replace('/(' . preg_quote(request('search'), '/') . ')/i', '<mark class="rounded bg-amber-200/50 px-1 text-amber-900 dark:bg-amber-400/20 dark:text-amber-200">$1</mark>', e(Str::limit($document->title, 50))) !!}
                                     @else
                                         {{ Str::limit($document->title, 50) }}
                                     @endif
@@ -678,7 +678,7 @@
                                     {{-- Document Number --}}
                                     <p class="text-xs font-mono text-[var(--text-tertiary)]">
                                         @if(request('search'))
-                                            {!! preg_replace('/(' . preg_quote(request('search'), '/') . ')/i', '<mark class="rounded bg-amber-200/60 px-1 text-amber-900 dark:bg-amber-400/20 dark:text-amber-200">$1</mark>', e($document->document_number)) !!}
+                                            {!! preg_replace('/(' . preg_quote(request('search'), '/') . ')/i', '<mark class="rounded bg-amber-200/50 px-1 text-amber-900 dark:bg-amber-400/20 dark:text-amber-200">$1</mark>', e($document->document_number)) !!}
                                         @else
                                             {{ $document->document_number }}
                                         @endif
@@ -688,7 +688,7 @@
                                     <h3 class="text-sm font-semibold text-[var(--text-primary)]">
                                         <a href="{{ route('documents.show', $document) }}" class="hover:text-primary-500">
                                             @if(request('search'))
-                                                {!! preg_replace('/(' . preg_quote(request('search'), '/') . ')/i', '<mark class="rounded bg-amber-200/60 px-1 text-amber-900 dark:bg-amber-400/20 dark:text-amber-200">$1</mark>', e(Str::limit($document->title, 60))) !!}
+                                                {!! preg_replace('/(' . preg_quote(request('search'), '/') . ')/i', '<mark class="rounded bg-amber-200/50 px-1 text-amber-900 dark:bg-amber-400/20 dark:text-amber-200">$1</mark>', e(Str::limit($document->title, 60))) !!}
                                             @else
                                                 {{ Str::limit($document->title, 60) }}
                                             @endif

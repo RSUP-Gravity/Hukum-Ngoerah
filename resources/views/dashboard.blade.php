@@ -134,8 +134,8 @@
                 <!-- Add New Document -->
                 <a href="{{ route('documents.create') }}" 
                    class="flex flex-col items-center p-4 rounded-xl border border-[var(--surface-glass-border)] hover:border-[var(--color-primary)] hover:bg-[var(--surface-glass)] transition-all group">
-                    <div class="w-12 h-12 rounded-xl bg-primary-500/10 flex items-center justify-center mb-2 group-hover:bg-primary-500/20 transition-colors">
-                        <svg class="w-6 h-6 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div class="w-12 h-12 rounded-xl bg-primary-50 dark:bg-primary-500/10 flex items-center justify-center mb-2 group-hover:bg-primary-100 dark:group-hover:bg-primary-500/20 transition-colors">
+                        <svg class="w-6 h-6 text-primary-600 dark:text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
                         </svg>
                     </div>
@@ -145,8 +145,8 @@
                 <!-- View All Documents -->
                 <a href="{{ route('documents.index') }}" 
                    class="flex flex-col items-center p-4 rounded-xl border border-[var(--surface-glass-border)] hover:border-[var(--color-primary)] hover:bg-[var(--surface-glass)] transition-all group">
-                    <div class="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center mb-2 group-hover:bg-blue-500/20 transition-colors">
-                        <svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div class="w-12 h-12 rounded-xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center mb-2 group-hover:bg-blue-100 dark:group-hover:bg-blue-500/20 transition-colors">
+                        <svg class="w-6 h-6 text-blue-600 dark:text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
                         </svg>
                     </div>
@@ -156,8 +156,8 @@
                 <!-- Export Report -->
                 <a href="{{ route('documents.export') }}" 
                    class="flex flex-col items-center p-4 rounded-xl border border-[var(--surface-glass-border)] hover:border-[var(--color-primary)] hover:bg-[var(--surface-glass)] transition-all group">
-                    <div class="w-12 h-12 rounded-xl bg-green-500/10 flex items-center justify-center mb-2 group-hover:bg-green-500/20 transition-colors">
-                        <svg class="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div class="w-12 h-12 rounded-xl bg-green-50 dark:bg-green-500/10 flex items-center justify-center mb-2 group-hover:bg-green-100 dark:group-hover:bg-green-500/20 transition-colors">
+                        <svg class="w-6 h-6 text-green-600 dark:text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                         </svg>
                     </div>
@@ -167,8 +167,8 @@
                 <!-- Expiring Documents -->
                 <a href="{{ route('documents.index', ['status' => 'expiring']) }}" 
                    class="flex flex-col items-center p-4 rounded-xl border border-[var(--surface-glass-border)] hover:border-[var(--color-primary)] hover:bg-[var(--surface-glass)] transition-all group">
-                    <div class="w-12 h-12 rounded-xl bg-yellow-500/10 flex items-center justify-center mb-2 group-hover:bg-yellow-500/20 transition-colors">
-                        <svg class="w-6 h-6 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div class="w-12 h-12 rounded-xl bg-yellow-50 dark:bg-yellow-500/10 flex items-center justify-center mb-2 group-hover:bg-yellow-100 dark:group-hover:bg-yellow-500/20 transition-colors">
+                        <svg class="w-6 h-6 text-yellow-600 dark:text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                         </svg>
                     </div>
@@ -178,8 +178,8 @@
                 <!-- Expired Documents -->
                 <a href="{{ route('documents.index', ['status' => 'expired']) }}" 
                    class="flex flex-col items-center p-4 rounded-xl border border-[var(--surface-glass-border)] hover:border-[var(--color-primary)] hover:bg-[var(--surface-glass)] transition-all group">
-                    <div class="w-12 h-12 rounded-xl bg-red-500/10 flex items-center justify-center mb-2 group-hover:bg-red-500/20 transition-colors">
-                        <svg class="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div class="w-12 h-12 rounded-xl bg-red-50 dark:bg-red-500/10 flex items-center justify-center mb-2 group-hover:bg-red-100 dark:group-hover:bg-red-500/20 transition-colors">
+                        <svg class="w-6 h-6 text-red-600 dark:text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
                         </svg>
                     </div>
@@ -192,8 +192,8 @@
                    x-data
                    @click="$dispatch('open-command-palette')"
                    class="flex flex-col items-center p-4 rounded-xl border border-[var(--surface-glass-border)] hover:border-[var(--color-primary)] hover:bg-[var(--surface-glass)] transition-all group">
-                    <div class="w-12 h-12 rounded-xl bg-purple-500/10 flex items-center justify-center mb-2 group-hover:bg-purple-500/20 transition-colors">
-                        <svg class="w-6 h-6 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div class="w-12 h-12 rounded-xl bg-purple-50 dark:bg-purple-500/10 flex items-center justify-center mb-2 group-hover:bg-purple-100 dark:group-hover:bg-purple-500/20 transition-colors">
+                        <svg class="w-6 h-6 text-purple-600 dark:text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                         </svg>
                     </div>
@@ -219,7 +219,7 @@
                 </div>
             </div>
             <div class="mt-4 flex items-center text-sm">
-                <span class="text-green-500 flex items-center">
+                <span class="text-green-600 dark:text-green-500 flex items-center">
                     <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path>
                     </svg>
@@ -243,7 +243,7 @@
                 </div>
             </div>
             <div class="mt-4">
-                <div class="w-full bg-[var(--surface-glass-border)] rounded-full h-2">
+                <div class="w-full bg-[var(--surface-glass)] dark:bg-[var(--surface-glass-border)] rounded-full h-2">
                     <div 
                         class="bg-green-500 h-2 rounded-full transition-all duration-500" 
                         style="width: {{ ($stats['total'] ?? 1) > 0 ? (($stats['active'] ?? 0) / ($stats['total'] ?? 1)) * 100 : 0 }}%"
@@ -257,7 +257,7 @@
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-sm font-medium text-[var(--text-secondary)]">Akan Kadaluarsa</p>
-                    <p class="mt-2 text-3xl font-bold text-yellow-500">{{ $stats['expiring'] ?? 0 }}</p>
+                    <p class="mt-2 text-3xl font-bold text-yellow-600 dark:text-yellow-500">{{ $stats['expiring'] ?? 0 }}</p>
                 </div>
                 <div class="w-12 h-12 rounded-xl bg-yellow-500/10 flex items-center justify-center">
                     <svg class="w-6 h-6 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -265,7 +265,7 @@
                     </svg>
                 </div>
             </div>
-            <a href="{{ route('documents.index', ['status' => 'expiring']) }}" class="mt-4 inline-flex items-center text-sm text-yellow-500 hover:text-yellow-600 transition-colors">
+            <a href="{{ route('documents.index', ['status' => 'expiring']) }}" class="mt-4 inline-flex items-center text-sm text-yellow-600 hover:text-yellow-700 dark:text-yellow-500 dark:hover:text-yellow-400 transition-colors">
                 Lihat detail
                 <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
@@ -278,7 +278,7 @@
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-sm font-medium text-[var(--text-secondary)]">Kadaluarsa</p>
-                    <p class="mt-2 text-3xl font-bold text-red-500">{{ $stats['expired'] ?? 0 }}</p>
+                    <p class="mt-2 text-3xl font-bold text-red-600 dark:text-red-500">{{ $stats['expired'] ?? 0 }}</p>
                 </div>
                 <div class="w-12 h-12 rounded-xl bg-red-500/10 flex items-center justify-center">
                     <svg class="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -286,7 +286,7 @@
                     </svg>
                 </div>
             </div>
-            <a href="{{ route('documents.index', ['status' => 'expired']) }}" class="mt-4 inline-flex items-center text-sm text-red-500 hover:text-red-600 transition-colors">
+            <a href="{{ route('documents.index', ['status' => 'expired']) }}" class="mt-4 inline-flex items-center text-sm text-red-600 hover:text-red-700 dark:text-red-500 dark:hover:text-red-400 transition-colors">
                 Lihat detail
                 <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
@@ -578,10 +578,10 @@
             function getThemeColors() {
                 const dark = isDarkMode();
                 return {
-                    textColor: dark ? '#E2E8F0' : '#1E293B',
-                    textSecondary: dark ? '#94A3B8' : '#64748B',
-                    gridColor: dark ? 'rgba(148, 163, 184, 0.15)' : 'rgba(148, 163, 184, 0.2)',
-                    tooltipBg: dark ? 'rgba(15, 23, 42, 0.95)' : 'rgba(255, 255, 255, 0.95)',
+                    textColor: dark ? '#E2E8F0' : '#0F172A',
+                    textSecondary: dark ? '#94A3B8' : '#475569',
+                    gridColor: dark ? 'rgba(148, 163, 184, 0.15)' : 'rgba(148, 163, 184, 0.28)',
+                    tooltipBg: dark ? 'rgba(15, 23, 42, 0.95)' : 'rgba(248, 250, 252, 0.98)',
                     tooltipText: dark ? '#F1F5F9' : '#0F172A',
                     tooltipBorder: dark ? 'rgba(0, 196, 214, 0.4)' : 'rgba(0, 160, 176, 0.3)',
                     chartColors: dark 
@@ -590,8 +590,8 @@
                         : ['#00A0B0', '#A4C639', '#3B82F6', '#8B5CF6', '#EC4899', 
                            '#F59E0B', '#10B981', '#EF4444', '#6366F1', '#14B8A6'],
                     primaryColor: dark ? '#22D3EE' : '#00A0B0',
-                    primaryBgColor: dark ? 'rgba(34, 211, 238, 0.25)' : 'rgba(0, 160, 176, 0.15)',
-                    cardBg: dark ? 'rgba(30, 41, 59, 0.8)' : 'rgba(255, 255, 255, 0.8)',
+                    primaryBgColor: dark ? 'rgba(34, 211, 238, 0.25)' : 'rgba(0, 160, 176, 0.12)',
+                    cardBg: dark ? 'rgba(30, 41, 59, 0.8)' : 'rgba(255, 255, 255, 0.92)',
                     severityColors: {
                         high: dark ? '#FB7185' : '#EF4444',
                         medium: dark ? '#FCD34D' : '#F59E0B',

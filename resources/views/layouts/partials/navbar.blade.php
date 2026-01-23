@@ -9,7 +9,7 @@
         <!-- Left Section -->
         <div class="flex items-center gap-4">
             <!-- Mobile Menu Button -->
-            <button 
+            <button
                 @click="toggleMobile()"
                 class="lg:hidden p-2 rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-glass)] transition-colors"
                 aria-label="Toggle mobile menu"
@@ -25,7 +25,7 @@
             <div class="hidden sm:block relative">
                 <button 
                     @click="$dispatch('open-command-palette')"
-                    class="flex items-center gap-3 px-4 py-2 rounded-lg text-sm text-[var(--text-tertiary)] bg-[var(--surface-glass)] border border-[var(--surface-glass-border)] hover:border-[var(--color-primary)] transition-colors w-64"
+                    class="flex items-center gap-3 px-4 py-2 rounded-lg text-sm text-[var(--text-secondary)] dark:text-[var(--text-tertiary)] bg-[var(--surface-glass-elevated)] dark:bg-[var(--surface-glass)] border border-[var(--surface-glass-border)] hover:border-[var(--color-primary)] transition-colors w-64"
                     aria-label="Open search dialog (Ctrl+K or Cmd+K)"
                     aria-keyshortcuts="Control+K Meta+K"
                 >
@@ -33,7 +33,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                     </svg>
                     <span>Cari dokumen...</span>
-                    <kbd class="ml-auto px-2 py-0.5 text-xs font-medium rounded bg-[var(--surface-glass-border)]" aria-hidden="true">⌘K</kbd>
+                    <kbd class="ml-auto px-2 py-0.5 text-xs font-medium rounded bg-[var(--surface-glass-elevated)] dark:bg-[var(--surface-glass-border)] text-[var(--text-secondary)] dark:text-[var(--text-tertiary)] border border-[var(--surface-glass-border)]" aria-hidden="true">⌘K</kbd>
                 </button>
             </div>
         </div>

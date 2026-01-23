@@ -20,7 +20,7 @@
 @supports not ((-webkit-backdrop-filter: none) or (backdrop-filter: none)) {
     .glass-card,
     .glass-surface {
-        background: rgba(255, 255, 255, 0.95);
+        background: rgba(255, 255, 255, 0.98);
     }
     
     .dark .glass-card,
@@ -216,7 +216,15 @@ textarea {
     outline-offset: 2px;
 }
 
-/* Normalize transitions */
+/* Normalize transitions - Temporarily disabled on page load to prevent flash */
+body.loading * {
+    -webkit-transition: none !important;
+    transition: none !important;
+    -webkit-animation: none !important;
+    animation: none !important;
+}
+
+/* Re-enable transitions after page load */
 *,
 *::before,
 *::after {
@@ -224,6 +232,8 @@ textarea {
     transition-property: background-color, border-color, color, fill, stroke, opacity, box-shadow, transform;
     -webkit-transition-duration: 150ms;
     transition-duration: 150ms;
+    -webkit-transition-timing-function: ease-in-out;
+    transition-timing-function: ease-in-out;
 }
 
 /* Normalize transform */

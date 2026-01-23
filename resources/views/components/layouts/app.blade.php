@@ -1,5 +1,8 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" x-data x-bind:class="{ 'dark': localStorage.getItem('darkMode') === 'true' }">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" x-data x-bind:class="{
+    'dark': localStorage.getItem('darkMode') === 'true' || (!localStorage.getItem('darkMode') && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches),
+    'light': localStorage.getItem('darkMode') === 'false' || (!localStorage.getItem('darkMode') && (!window.matchMedia || !window.matchMedia('(prefers-color-scheme: dark)').matches))
+}">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -8,27 +11,37 @@
     <title>{{ $title ?? 'Dashboard' }} - {{ config('app.name', 'Hukum RS Ngoerah') }}</title>
 
     <!-- Favicon -->
-    <link rel="icon" type="image/png" href="{{ asset('images/favicon.png') }}">
+    <link rel="icon" type="image/png" href="{{ asset('images/logo kemenkes.png') }}">
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.bunny.net">
 
     <style>
-        html { background: #F5F7FB; color: #0B1220; }
+        html { background: #F8FAFC; color: #0B1220; }
         html.dark { background: #0F172A; color: #F1F5F9; }
         body { background: inherit; color: inherit; }
+
+        /* Page loader overlay - removed to eliminate transition flash */
+        #page-loader {
+            display: none !important;
+        }
     </style>
 
     <script>
         (function() {
             const stored = localStorage.getItem('darkMode');
             const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-            if (stored === 'true' || (stored === null && prefersDark)) {
+            const isDark = stored === 'true' || (stored === null && prefersDark);
+
+            if (isDark) {
                 document.documentElement.classList.add('dark');
+                document.documentElement.classList.remove('light');
                 document.documentElement.style.backgroundColor = '#0F172A';
                 document.documentElement.style.color = '#F1F5F9';
             } else {
-                document.documentElement.style.backgroundColor = '#F5F7FB';
+                document.documentElement.classList.add('light');
+                document.documentElement.classList.remove('dark');
+                document.documentElement.style.backgroundColor = '#F8FAFC';
                 document.documentElement.style.color = '#0B1220';
             }
         })();
@@ -40,7 +53,7 @@
     <!-- Additional Head Content -->
     @stack('styles')
 </head>
-<body class="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] antialiased">
+<body class="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] antialiased loading">
     <div x-data="sidebar()" class="min-h-screen">
         <!-- Sidebar -->
         @include('layouts.partials.sidebar')
@@ -160,6 +173,23 @@
             </button>
         </nav>
     </div>
+
+    <script>
+        // Enable transitions after page load to prevent flash
+        window.addEventListener('DOMContentLoaded', function() {
+            // Small delay to ensure styles are applied
+            setTimeout(() => {
+                document.body.classList.remove('loading');
+            }, 50);
+        });
+
+        // Fallback for already loaded pages
+        if (document.readyState === 'complete' || document.readyState === 'interactive') {
+            setTimeout(() => {
+                document.body.classList.remove('loading');
+            }, 50);
+        }
+    </script>
 
     @stack('scripts')
 </body>

@@ -28,8 +28,9 @@ class AppServiceProvider extends ServiceProvider
         // Configure Rate Limiting
         $this->configureRateLimiting();
 
-        // Use Bootstrap pagination
-        Paginator::useBootstrap();
+        // Use custom glass pagination
+        Paginator::defaultView('pagination.glass');
+        Paginator::defaultSimpleView('pagination.glass-simple');
         
         // Share global variables with views
         View::composer('*', function ($view) {
