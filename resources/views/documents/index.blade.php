@@ -169,62 +169,64 @@
                     <x-button type="submit" size="sm">Filter</x-button>
                     <x-button href="{{ route('documents.index') }}" size="sm" variant="secondary">Reset</x-button>
 
-                    {{-- Filter Presets Dropdown --}}
-                    <div x-data="filterPresets()">
-                        <x-dropdown align="right" width="64">
+                    <div class="inline-flex items-center gap-2">
+                        {{-- Export Dropdown --}}
+                        <x-dropdown align="right" width="56">
                             <x-slot name="trigger">
-                                <button class="btn-secondary px-3 py-2 rounded-lg" type="button" aria-label="Filter presets">
-                                    <i class="bi bi-bookmark"></i>
+                                <button class="btn-secondary px-3 py-2 rounded-lg" type="button" aria-label="Export">
+                                    <i class="bi bi-download"></i>
                                 </button>
                             </x-slot>
-
-                            <div class="px-4 py-2 border-b border-[var(--surface-glass-border)]">
-                                <p class="text-xs font-semibold text-[var(--text-tertiary)] uppercase">Preset Filter</p>
-                            </div>
-                            <div class="px-4 py-3 space-y-2">
-                                <div class="flex items-center gap-2">
-                                    <input type="text" class="glass-input h-9" placeholder="Nama preset..." x-model="newPresetName" @keydown.enter.prevent="savePreset()">
-                                    <button class="btn-primary px-3 py-2 rounded-lg" type="button" @click="savePreset()" :disabled="!newPresetName.trim()">
-                                        <i class="bi bi-save"></i>
-                                    </button>
-                                </div>
-                            </div>
-                            <div class="border-t border-[var(--surface-glass-border)]"></div>
-                            <div class="py-2">
-                                <template x-if="presets.length === 0">
-                                    <div class="px-4 py-3 text-center text-xs text-[var(--text-tertiary)]">
-                                        Belum ada preset tersimpan
-                                    </div>
-                                </template>
-                                <template x-for="(preset, index) in presets" :key="index">
-                                    <div class="px-4 py-2 flex items-center justify-between">
-                                        <button type="button" class="text-sm text-[var(--text-primary)] hover:text-primary-500" @click="applyPreset(preset)">
-                                            <i class="bi bi-bookmark-fill mr-2 text-primary-500"></i>
-                                            <span x-text="preset.name"></span>
-                                        </button>
-                                        <button type="button" class="text-sm text-red-500 hover:text-red-600" @click.stop="deletePreset(index)">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
-                                    </div>
-                                </template>
-                            </div>
+                            <x-dropdown-item href="{{ route('documents.export', request()->query()) }}">
+                                Export ke Excel
+                            </x-dropdown-item>
+                            <x-dropdown-item href="{{ route('documents.export-pdf', request()->query()) }}">
+                                Export ke PDF
+                            </x-dropdown-item>
                         </x-dropdown>
-                    </div>
 
-                    {{-- Export Dropdown --}}
-                    <x-dropdown align="right" width="56">
-                        <x-slot name="trigger">
-                            <button class="btn-secondary px-3 py-2 rounded-lg" type="button" aria-label="Export">
-                                <i class="bi bi-download"></i>
-                            </button>
-                        </x-slot>
-                        <x-dropdown-item href="{{ route('documents.export', request()->query()) }}">
-                            Export ke Excel
-                        </x-dropdown-item>
-                        <x-dropdown-item href="{{ route('documents.export-pdf', request()->query()) }}">
-                            Export ke PDF
-                        </x-dropdown-item>
-                    </x-dropdown>
+                        {{-- Filter Presets Dropdown --}}
+                        <div x-data="filterPresets()">
+                            <x-dropdown align="right" width="64" :closeOnClick="false">
+                                <x-slot name="trigger">
+                                    <button class="btn-secondary px-3 py-2 rounded-lg" type="button" aria-label="Filter presets">
+                                        <i class="bi bi-bookmark"></i>
+                                    </button>
+                                </x-slot>
+
+                                <div class="px-4 py-2 border-b border-[var(--surface-glass-border)]">
+                                    <p class="text-xs font-semibold text-[var(--text-tertiary)] uppercase">Preset Filter</p>
+                                </div>
+                                <div class="px-4 py-3 space-y-2">
+                                    <div class="flex items-center gap-2">
+                                        <input type="text" class="glass-input h-9" placeholder="Nama preset..." x-model="newPresetName" @keydown.enter.prevent="savePreset()">
+                                        <button class="btn-primary px-3 py-2 rounded-lg" type="button" @click="savePreset()" :disabled="!newPresetName.trim()">
+                                            <i class="bi bi-save"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="border-t border-[var(--surface-glass-border)]"></div>
+                                <div class="py-2">
+                                    <template x-if="presets.length === 0">
+                                        <div class="px-4 py-3 text-center text-xs text-[var(--text-tertiary)]">
+                                            Belum ada preset tersimpan
+                                        </div>
+                                    </template>
+                                    <template x-for="(preset, index) in presets" :key="index">
+                                        <div class="px-4 py-2 flex items-center justify-between">
+                                            <button type="button" class="text-sm text-[var(--text-primary)] hover:text-primary-500" @click="applyPreset(preset); close()">
+                                                <i class="bi bi-bookmark-fill mr-2 text-primary-500"></i>
+                                                <span x-text="preset.name"></span>
+                                            </button>
+                                            <button type="button" class="text-sm text-red-500 hover:text-red-600" @click.stop="deletePreset(index)">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </div>
+                                    </template>
+                                </div>
+                            </x-dropdown>
+                        </div>
+                    </div>
                 </div>
             </div>
 

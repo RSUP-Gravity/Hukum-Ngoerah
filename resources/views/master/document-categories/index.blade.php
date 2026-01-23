@@ -179,7 +179,7 @@
             <label class="block text-sm font-medium text-[var(--text-primary)]">Jenis Dokumen <span class="text-red-500" aria-hidden="true">*</span></label>
             <select class="glass-input" name="document_type_id" id="edit_type_id" required>
                 <option value="">Pilih Jenis</option>
-                @foreach($types as $type)
+                @foreach($documentTypes as $type)
                     <option value="{{ $type->id }}">{{ $type->name }}</option>
                 @endforeach
             </select>

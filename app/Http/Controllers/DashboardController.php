@@ -112,6 +112,7 @@ class DashboardController extends Controller
         
         return Cache::remember($cacheKey, self::CACHE_TTL, function () use ($user) {
             $query = Document::query();
+            $now = now();
             
             // Filter based on user permissions
             if (!$user->hasPermission('documents.view_all')) {
@@ -121,16 +122,36 @@ class DashboardController extends Controller
                 });
             }
 
+            $totalDocuments = (clone $query)->count();
+            $newThisMonth = (clone $query)
+                ->whereBetween('created_at', [$now->copy()->startOfMonth(), $now->copy()->endOfMonth()])
+                ->count();
+            $publishedDocuments = (clone $query)->published()->count();
+            $activeDocuments = (clone $query)
+                ->published()
+                ->where(function ($q) use ($now) {
+                    $q->whereNull('expiry_date')
+                        ->orWhere('expiry_date', '>=', $now);
+                })
+                ->count();
+            $expiringSoon = (clone $query)->published()->expiringSoon(30)->count();
+            $expiredDocuments = (clone $query)->published()->expired()->count();
+
             return [
-                'total_documents' => (clone $query)->count(),
+                'total' => $totalDocuments,
+                'new_this_month' => $newThisMonth,
+                'active' => $activeDocuments,
+                'expiring' => $expiringSoon,
+                'expired' => $expiredDocuments,
+                'total_documents' => $totalDocuments,
                 'draft_documents' => (clone $query)->status(Document::STATUS_DRAFT)->count(),
                 'pending_approval' => (clone $query)->status([
                     Document::STATUS_PENDING_REVIEW,
                     Document::STATUS_PENDING_APPROVAL,
                 ])->count(),
-                'published_documents' => (clone $query)->status(Document::STATUS_PUBLISHED)->count(),
-                'expiring_soon' => (clone $query)->expiringSoon(30)->count(),
-                'expired_documents' => (clone $query)->expired()->count(),
+                'published_documents' => $publishedDocuments,
+                'expiring_soon' => $expiringSoon,
+                'expired_documents' => $expiredDocuments,
                 'my_pending_approvals' => DocumentApproval::forApprover($user->id)->pending()->count(),
                 'unread_notifications' => $user->unreadNotifications()->count(),
             ];

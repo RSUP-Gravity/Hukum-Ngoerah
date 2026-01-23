@@ -38,7 +38,7 @@
             <th class="text-right">Aksi</th>
         </x-slot>
 
-        @forelse($types as $type)
+        @forelse($documentTypes as $type)
             <tr>
                 <td class="text-xs font-mono text-[var(--text-tertiary)]">{{ $type->code }}</td>
                 <td>
@@ -90,9 +90,9 @@
             </tr>
         @endforelse
 
-        @if($types->hasPages())
+        @if($documentTypes->hasPages())
             <x-slot name="pagination">
-                {{ $types->withQueryString()->links() }}
+                {{ $documentTypes->withQueryString()->links() }}
             </x-slot>
         @endif
     </x-table>

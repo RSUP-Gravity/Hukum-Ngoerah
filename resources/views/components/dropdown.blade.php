@@ -2,6 +2,7 @@
     'align' => 'right',
     'width' => '48',
     'contentClasses' => '',
+    'closeOnClick' => true,
 ])
 
 @php
@@ -19,7 +20,7 @@
     ][$width] ?? 'w-48';
 @endphp
 
-<div x-data="dropdown()" class="relative inline-block text-left" @keydown.escape.window="close()">
+<div x-data="{ ...dropdown(), closeOnClick: {{ $closeOnClick ? 'true' : 'false' }} }" class="relative inline-block text-left" @keydown.escape.window="close()">
     <!-- Trigger -->
     <div @click="toggle()">
         {{ $trigger }}
@@ -35,7 +36,7 @@
         x-transition:leave-start="opacity-100 scale-100"
         x-transition:leave-end="opacity-0 scale-95"
         @click.outside="close()"
-        @click="close()"
+        @click="closeOnClick && close()"
         class="glass-dropdown {{ $alignmentClasses }} {{ $widthClasses }} {{ $contentClasses }}"
         x-cloak
     >

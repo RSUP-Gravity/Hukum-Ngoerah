@@ -13,6 +13,8 @@
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="{{ asset('images/logo kemenkes.png') }}">
 
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
     <style>
         html { background: #F8FAFC; color: #0B1220; }
         html.dark { background: #0F172A; color: #F1F5F9; }
