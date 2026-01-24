@@ -195,6 +195,32 @@
             </div>
         </div>
     </form>
+
+    <x-modal name="unsaved-changes" maxWidth="sm">
+        <x-slot name="header">
+            <div class="flex items-center gap-2 text-sm font-semibold text-[var(--text-primary)]">
+                <span class="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[var(--surface-glass)] text-[var(--text-secondary)]">
+                    <i class="bi bi-globe2"></i>
+                </span>
+                <span>{{ request()->getHttpHost() }}</span>
+            </div>
+        </x-slot>
+
+        <p class="text-sm text-[var(--text-secondary)] leading-relaxed">
+            Anda memiliki perubahan yang belum disimpan. Yakin ingin meninggalkan halaman ini?
+        </p>
+
+        <x-slot name="footer">
+            <div class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                <x-button type="button" variant="secondary" @click="$dispatch('close-modal', 'unsaved-changes')">
+                    Cancel
+                </x-button>
+                <x-button type="button" @click="$dispatch('unsaved-confirm')">
+                    OK
+                </x-button>
+            </div>
+        </x-slot>
+    </x-modal>
 </div>
 @endsection
 
@@ -205,6 +231,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('documentForm');
     let formDirty = false;
     let isSubmitting = false;
+    let isNavigating = false;
+    let pendingHref = null;
+    const warningMessage = 'Anda memiliki perubahan yang belum disimpan. Yakin ingin meninggalkan halaman ini?';
     
     // Track form changes
     const formInputs = form.querySelectorAll('input, select, textarea');
@@ -216,13 +245,14 @@ document.addEventListener('DOMContentLoaded', function() {
     // Reset dirty flag on form submit
     form.addEventListener('submit', function() {
         isSubmitting = true;
+        isNavigating = true;
     });
     
     // Warn user before leaving
     window.addEventListener('beforeunload', function(e) {
-        if (formDirty && !isSubmitting) {
+        if (formDirty && !isSubmitting && !isNavigating) {
             e.preventDefault();
-            e.returnValue = 'Anda memiliki perubahan yang belum disimpan. Yakin ingin meninggalkan halaman ini?';
+            e.returnValue = warningMessage;
             return e.returnValue;
         }
     });
@@ -230,12 +260,29 @@ document.addEventListener('DOMContentLoaded', function() {
     // Intercept navigation links
     document.querySelectorAll('a[href]').forEach(link => {
         link.addEventListener('click', function(e) {
+            const href = link.getAttribute('href');
+            if (!href || href.startsWith('#') || href.startsWith('javascript:')) {
+                return;
+            }
+            if (link.target === '_blank' || link.hasAttribute('download')) {
+                return;
+            }
             if (formDirty && !isSubmitting) {
-                if (!confirm('Anda memiliki perubahan yang belum disimpan. Yakin ingin meninggalkan halaman ini?')) {
-                    e.preventDefault();
-                }
+                e.preventDefault();
+                pendingHref = link.href;
+                window.dispatchEvent(new CustomEvent('open-modal', { detail: 'unsaved-changes' }));
             }
         });
+    });
+
+    document.addEventListener('unsaved-confirm', function() {
+        if (!pendingHref) {
+            window.dispatchEvent(new CustomEvent('close-modal', { detail: 'unsaved-changes' }));
+            return;
+        }
+        isNavigating = true;
+        window.dispatchEvent(new CustomEvent('close-modal', { detail: 'unsaved-changes' }));
+        window.location.href = pendingHref;
     });
     
     // Dynamic category filtering
