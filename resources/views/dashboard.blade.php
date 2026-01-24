@@ -1,18 +1,27 @@
 <x-layouts.app title="Dashboard">
+    @php
+        $isViewer = $isViewer ?? auth()->user()->hasRole('viewer');
+    @endphp
     <x-slot name="header">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
                 <h1 class="text-2xl font-bold text-[var(--text-primary)]">Dashboard</h1>
                 <p class="mt-1 text-sm text-[var(--text-secondary)]">
-                    Selamat datang, {{ auth()->user()->name ?? 'User' }}! Berikut ringkasan dokumen hukum Anda.
+                    @if ($isViewer)
+                        Selamat datang, {{ auth()->user()->name ?? 'User' }}! Berikut ringkasan dokumen publik terbaru.
+                    @else
+                        Selamat datang, {{ auth()->user()->name ?? 'User' }}! Berikut ringkasan dokumen hukum Anda.
+                    @endif
                 </p>
             </div>
-            <x-button href="{{ route('documents.create') }}">
-                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                </svg>
-                Tambah Dokumen
-            </x-button>
+            @if (!$isViewer)
+                <x-button href="{{ route('documents.create') }}">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                    </svg>
+                    Tambah Dokumen
+                </x-button>
+            @endif
         </div>
     </x-slot>
 
@@ -121,7 +130,7 @@
 
     <!-- Quick Actions Widget -->
     <div class="mt-8 mb-8">
-        <x-glass-card :hover="false">
+        <x-glass-card :hover="false" id="dokumen-terbaru">
             <div class="flex items-center justify-between mb-4">
                 <h3 class="text-lg font-semibold text-[var(--text-primary)]">
                     <svg class="w-5 h-5 inline-block mr-2 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -130,76 +139,113 @@
                     Aksi Cepat
                 </h3>
             </div>
-            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-                <!-- Add New Document -->
-                <a href="{{ route('documents.create') }}" 
-                   class="flex flex-col items-center p-4 rounded-xl border border-[var(--surface-glass-border)] hover:border-[var(--color-primary)] hover:bg-[var(--surface-glass)] transition-all group">
-                    <div class="w-12 h-12 rounded-xl bg-primary-50 dark:bg-primary-500/10 flex items-center justify-center mb-2 group-hover:bg-primary-100 dark:group-hover:bg-primary-500/20 transition-colors">
-                        <svg class="w-6 h-6 text-primary-600 dark:text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                        </svg>
-                    </div>
-                    <span class="text-sm font-medium text-[var(--text-primary)] text-center">Tambah Dokumen</span>
-                </a>
+            @if ($isViewer)
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-4">
+                    <a href="{{ route('documents.index') }}" 
+                       class="flex flex-col items-center p-4 rounded-xl border border-[var(--surface-glass-border)] hover:border-[var(--color-primary)] hover:bg-[var(--surface-glass)] transition-all group">
+                        <div class="w-12 h-12 rounded-xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center mb-2 group-hover:bg-blue-100 dark:group-hover:bg-blue-500/20 transition-colors">
+                            <svg class="w-6 h-6 text-blue-600 dark:text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                            </svg>
+                        </div>
+                        <span class="text-sm font-medium text-[var(--text-primary)] text-center">Semua Dokumen</span>
+                    </a>
 
-                <!-- View All Documents -->
-                <a href="{{ route('documents.index') }}" 
-                   class="flex flex-col items-center p-4 rounded-xl border border-[var(--surface-glass-border)] hover:border-[var(--color-primary)] hover:bg-[var(--surface-glass)] transition-all group">
-                    <div class="w-12 h-12 rounded-xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center mb-2 group-hover:bg-blue-100 dark:group-hover:bg-blue-500/20 transition-colors">
-                        <svg class="w-6 h-6 text-blue-600 dark:text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
-                        </svg>
-                    </div>
-                    <span class="text-sm font-medium text-[var(--text-primary)] text-center">Semua Dokumen</span>
-                </a>
+                    <a href="#dokumen-terbaru"
+                       class="flex flex-col items-center p-4 rounded-xl border border-[var(--surface-glass-border)] hover:border-[var(--color-primary)] hover:bg-[var(--surface-glass)] transition-all group">
+                        <div class="w-12 h-12 rounded-xl bg-yellow-50 dark:bg-yellow-500/10 flex items-center justify-center mb-2 group-hover:bg-yellow-100 dark:group-hover:bg-yellow-500/20 transition-colors">
+                            <svg class="w-6 h-6 text-yellow-600 dark:text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                        <span class="text-sm font-medium text-[var(--text-primary)] text-center">Dokumen Terbaru</span>
+                    </a>
 
-                <!-- Export Report -->
-                <a href="{{ route('documents.export') }}" 
-                   class="flex flex-col items-center p-4 rounded-xl border border-[var(--surface-glass-border)] hover:border-[var(--color-primary)] hover:bg-[var(--surface-glass)] transition-all group">
-                    <div class="w-12 h-12 rounded-xl bg-green-50 dark:bg-green-500/10 flex items-center justify-center mb-2 group-hover:bg-green-100 dark:group-hover:bg-green-500/20 transition-colors">
-                        <svg class="w-6 h-6 text-green-600 dark:text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                        </svg>
-                    </div>
-                    <span class="text-sm font-medium text-[var(--text-primary)] text-center">Export Laporan</span>
-                </a>
+                    <button 
+                       type="button"
+                       x-data
+                       @click="$dispatch('open-command-palette')"
+                       class="flex flex-col items-center p-4 rounded-xl border border-[var(--surface-glass-border)] hover:border-[var(--color-primary)] hover:bg-[var(--surface-glass)] transition-all group">
+                        <div class="w-12 h-12 rounded-xl bg-purple-50 dark:bg-purple-500/10 flex items-center justify-center mb-2 group-hover:bg-purple-100 dark:group-hover:bg-purple-500/20 transition-colors">
+                            <svg class="w-6 h-6 text-purple-600 dark:text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                        </div>
+                        <span class="text-sm font-medium text-[var(--text-primary)] text-center">Cari Dokumen</span>
+                    </button>
+                </div>
+            @else
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+                    <!-- Add New Document -->
+                    <a href="{{ route('documents.create') }}" 
+                       class="flex flex-col items-center p-4 rounded-xl border border-[var(--surface-glass-border)] hover:border-[var(--color-primary)] hover:bg-[var(--surface-glass)] transition-all group">
+                        <div class="w-12 h-12 rounded-xl bg-primary-50 dark:bg-primary-500/10 flex items-center justify-center mb-2 group-hover:bg-primary-100 dark:group-hover:bg-primary-500/20 transition-colors">
+                            <svg class="w-6 h-6 text-primary-600 dark:text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                            </svg>
+                        </div>
+                        <span class="text-sm font-medium text-[var(--text-primary)] text-center">Tambah Dokumen</span>
+                    </a>
 
-                <!-- Expiring Documents -->
-                <a href="{{ route('documents.index', ['status' => 'expiring']) }}" 
-                   class="flex flex-col items-center p-4 rounded-xl border border-[var(--surface-glass-border)] hover:border-[var(--color-primary)] hover:bg-[var(--surface-glass)] transition-all group">
-                    <div class="w-12 h-12 rounded-xl bg-yellow-50 dark:bg-yellow-500/10 flex items-center justify-center mb-2 group-hover:bg-yellow-100 dark:group-hover:bg-yellow-500/20 transition-colors">
-                        <svg class="w-6 h-6 text-yellow-600 dark:text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                    </div>
-                    <span class="text-sm font-medium text-[var(--text-primary)] text-center">Akan Kadaluarsa</span>
-                </a>
+                    <!-- View All Documents -->
+                    <a href="{{ route('documents.index') }}" 
+                       class="flex flex-col items-center p-4 rounded-xl border border-[var(--surface-glass-border)] hover:border-[var(--color-primary)] hover:bg-[var(--surface-glass)] transition-all group">
+                        <div class="w-12 h-12 rounded-xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center mb-2 group-hover:bg-blue-100 dark:group-hover:bg-blue-500/20 transition-colors">
+                            <svg class="w-6 h-6 text-blue-600 dark:text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                            </svg>
+                        </div>
+                        <span class="text-sm font-medium text-[var(--text-primary)] text-center">Semua Dokumen</span>
+                    </a>
 
-                <!-- Expired Documents -->
-                <a href="{{ route('documents.index', ['status' => 'expired']) }}" 
-                   class="flex flex-col items-center p-4 rounded-xl border border-[var(--surface-glass-border)] hover:border-[var(--color-primary)] hover:bg-[var(--surface-glass)] transition-all group">
-                    <div class="w-12 h-12 rounded-xl bg-red-50 dark:bg-red-500/10 flex items-center justify-center mb-2 group-hover:bg-red-100 dark:group-hover:bg-red-500/20 transition-colors">
-                        <svg class="w-6 h-6 text-red-600 dark:text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
-                        </svg>
-                    </div>
-                    <span class="text-sm font-medium text-[var(--text-primary)] text-center">Kadaluarsa</span>
-                </a>
+                    <!-- Export Report -->
+                    <a href="{{ route('documents.export') }}" 
+                       class="flex flex-col items-center p-4 rounded-xl border border-[var(--surface-glass-border)] hover:border-[var(--color-primary)] hover:bg-[var(--surface-glass)] transition-all group">
+                        <div class="w-12 h-12 rounded-xl bg-green-50 dark:bg-green-500/10 flex items-center justify-center mb-2 group-hover:bg-green-100 dark:group-hover:bg-green-500/20 transition-colors">
+                            <svg class="w-6 h-6 text-green-600 dark:text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                        </div>
+                        <span class="text-sm font-medium text-[var(--text-primary)] text-center">Export Laporan</span>
+                    </a>
 
-                <!-- Search Documents -->
-                <button 
-                   type="button"
-                   x-data
-                   @click="$dispatch('open-command-palette')"
-                   class="flex flex-col items-center p-4 rounded-xl border border-[var(--surface-glass-border)] hover:border-[var(--color-primary)] hover:bg-[var(--surface-glass)] transition-all group">
-                    <div class="w-12 h-12 rounded-xl bg-purple-50 dark:bg-purple-500/10 flex items-center justify-center mb-2 group-hover:bg-purple-100 dark:group-hover:bg-purple-500/20 transition-colors">
-                        <svg class="w-6 h-6 text-purple-600 dark:text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                        </svg>
-                    </div>
-                    <span class="text-sm font-medium text-[var(--text-primary)] text-center">Cari Dokumen</span>
-                </button>
-            </div>
+                    <!-- Expiring Documents -->
+                    <a href="{{ route('documents.index', ['status' => 'expiring']) }}" 
+                       class="flex flex-col items-center p-4 rounded-xl border border-[var(--surface-glass-border)] hover:border-[var(--color-primary)] hover:bg-[var(--surface-glass)] transition-all group">
+                        <div class="w-12 h-12 rounded-xl bg-yellow-50 dark:bg-yellow-500/10 flex items-center justify-center mb-2 group-hover:bg-yellow-100 dark:group-hover:bg-yellow-500/20 transition-colors">
+                            <svg class="w-6 h-6 text-yellow-600 dark:text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                        <span class="text-sm font-medium text-[var(--text-primary)] text-center">Akan Kadaluarsa</span>
+                    </a>
+
+                    <!-- Expired Documents -->
+                    <a href="{{ route('documents.index', ['status' => 'expired']) }}" 
+                       class="flex flex-col items-center p-4 rounded-xl border border-[var(--surface-glass-border)] hover:border-[var(--color-primary)] hover:bg-[var(--surface-glass)] transition-all group">
+                        <div class="w-12 h-12 rounded-xl bg-red-50 dark:bg-red-500/10 flex items-center justify-center mb-2 group-hover:bg-red-100 dark:group-hover:bg-red-500/20 transition-colors">
+                            <svg class="w-6 h-6 text-red-600 dark:text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                            </svg>
+                        </div>
+                        <span class="text-sm font-medium text-[var(--text-primary)] text-center">Kadaluarsa</span>
+                    </a>
+
+                    <!-- Search Documents -->
+                    <button 
+                       type="button"
+                       x-data
+                       @click="$dispatch('open-command-palette')"
+                       class="flex flex-col items-center p-4 rounded-xl border border-[var(--surface-glass-border)] hover:border-[var(--color-primary)] hover:bg-[var(--surface-glass)] transition-all group">
+                        <div class="w-12 h-12 rounded-xl bg-purple-50 dark:bg-purple-500/10 flex items-center justify-center mb-2 group-hover:bg-purple-100 dark:group-hover:bg-purple-500/20 transition-colors">
+                            <svg class="w-6 h-6 text-purple-600 dark:text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                        </div>
+                        <span class="text-sm font-medium text-[var(--text-primary)] text-center">Cari Dokumen</span>
+                    </button>
+                </div>
+            @endif
         </x-glass-card>
     </div>
 
@@ -209,7 +255,9 @@
         <x-glass-card class="relative overflow-hidden">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-sm font-medium text-[var(--text-secondary)]">Total Dokumen</p>
+                    <p class="text-sm font-medium text-[var(--text-secondary)]">
+                        {{ $isViewer ? 'Total Dokumen Publik' : 'Total Dokumen' }}
+                    </p>
                     <p class="mt-2 text-3xl font-bold text-[var(--text-primary)]">{{ $stats['total'] ?? 0 }}</p>
                 </div>
                 <div class="w-12 h-12 rounded-xl bg-primary-500/10 flex items-center justify-center">
@@ -225,7 +273,9 @@
                     </svg>
                     {{ $stats['new_this_month'] ?? 0 }}
                 </span>
-                <span class="text-[var(--text-tertiary)] ml-2">dokumen baru bulan ini</span>
+                <span class="text-[var(--text-tertiary)] ml-2">
+                    {{ $isViewer ? 'dokumen publik baru bulan ini' : 'dokumen baru bulan ini' }}
+                </span>
             </div>
         </x-glass-card>
 
@@ -295,6 +345,7 @@
         </x-glass-card>
     </div>
 
+    @if (!$isViewer)
     <div x-data="{ showBreakdown: false }" class="mb-6">
         <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
             <div>
@@ -368,6 +419,7 @@
         </x-glass-card>
     </div>
 
+    @endif
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         <!-- Dokumen Segera Kadaluarsa -->
         <x-glass-card :hover="false">
@@ -405,7 +457,14 @@
                         <svg class="w-12 h-12 mx-auto mb-3 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                         </svg>
-                        <p class="text-sm">Tidak ada dokumen yang akan kadaluarsa</p>
+                        @if ($isViewer)
+                            <p class="text-sm">Tidak ada dokumen publik yang akan kadaluarsa.</p>
+                            <a href="{{ route('documents.index') }}" class="mt-3 inline-flex items-center text-sm text-primary-500 hover:text-primary-600">
+                                Lihat semua dokumen
+                            </a>
+                        @else
+                            <p class="text-sm">Tidak ada dokumen yang akan kadaluarsa</p>
+                        @endif
                     </div>
                 @endforelse
             </div>
@@ -438,13 +497,21 @@
                         <svg class="w-12 h-12 mx-auto mb-3 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                         </svg>
-                        <p class="text-sm">Belum ada dokumen</p>
+                        @if ($isViewer)
+                            <p class="text-sm">Belum ada dokumen publik.</p>
+                            <a href="{{ route('documents.index') }}" class="mt-3 inline-flex items-center text-sm text-primary-500 hover:text-primary-600">
+                                Lihat semua dokumen
+                            </a>
+                        @else
+                            <p class="text-sm">Belum ada dokumen</p>
+                        @endif
                     </div>
                 @endforelse
             </div>
         </x-glass-card>
     </div>
 
+    @if (!$isViewer)
     <!-- Activity Timeline Section -->
     <div class="mb-8">
         <x-glass-card :hover="false">
@@ -561,7 +628,9 @@
             </div>
         </x-glass-card>
     </div>
-
+    @endif
+  
+    @if (!$isViewer)
     @push('scripts')
     <script>
         document.addEventListener('DOMContentLoaded', function() {
@@ -979,4 +1048,5 @@
         });
     </script>
     @endpush
+    @endif
 </x-layouts.app>

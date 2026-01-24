@@ -24,30 +24,31 @@ class DashboardController extends Controller
     public function index(Request $request)
     {
         $user = Auth::user();
+        $isViewer = $user->hasRole('viewer');
         
         // Get statistics based on user role
-        $stats = $this->getStatistics($user);
+        $stats = $this->getStatistics($user, $isViewer);
         
         // Get pending approvals for the user
-        $pendingApprovals = $this->getPendingApprovals($user);
+        $pendingApprovals = $isViewer ? collect() : $this->getPendingApprovals($user);
         
         // Get recent documents
-        $recentDocuments = $this->getRecentDocuments($user);
+        $recentDocuments = $this->getRecentDocuments($user, $isViewer);
         
         // Get expiring documents
-        $expiringDocuments = $this->getExpiringDocuments($user);
+        $expiringDocuments = $this->getExpiringDocuments($user, $isViewer);
         
         // Get recent activity timeline
-        $recentActivities = $this->getRecentActivities($user);
+        $recentActivities = $this->getRecentActivities($user, $isViewer);
         
         // Get recent notifications
-        $recentNotifications = $user->notifications()
+        $recentNotifications = $isViewer ? collect() : $user->notifications()
             ->orderBy('created_at', 'desc')
             ->limit(5)
             ->get();
         
         // Get chart data
-        $chartData = $this->getChartData($user);
+        $chartData = $isViewer ? [] : $this->getChartData($user);
 
         // Check if we should show login notification popup
         $showLoginNotification = false;
@@ -82,7 +83,8 @@ class DashboardController extends Controller
             'recentNotifications',
             'chartData',
             'showLoginNotification',
-            'criticalDocuments'
+            'criticalDocuments',
+            'isViewer'
         ));
     }
 
@@ -106,16 +108,18 @@ class DashboardController extends Controller
     /**
      * Get dashboard statistics with caching (5 minute TTL)
      */
-    protected function getStatistics($user): array
+    protected function getStatistics($user, bool $isViewer = false): array
     {
         $cacheKey = "dashboard_stats_user_{$user->id}";
         
-        return Cache::remember($cacheKey, self::CACHE_TTL, function () use ($user) {
+        return Cache::remember($cacheKey, self::CACHE_TTL, function () use ($user, $isViewer) {
             $query = Document::query();
             $now = now();
             
             // Filter based on user permissions
-            if (!$user->hasPermission('documents.view_all')) {
+            if ($isViewer) {
+                $query->where('status', Document::STATUS_PUBLISHED);
+            } elseif (!$user->hasPermission('documents.view_all')) {
                 $query->where(function ($q) use ($user) {
                     $q->where('created_by', $user->id)
                       ->orWhere('unit_id', $user->unit_id);
@@ -174,13 +178,15 @@ class DashboardController extends Controller
     /**
      * Get recent documents
      */
-    protected function getRecentDocuments($user)
+    protected function getRecentDocuments($user, bool $isViewer = false)
     {
         $query = Document::with(['documentType', 'creator', 'unit'])
             ->orderBy('created_at', 'desc');
         
         // Filter based on user permissions
-        if (!$user->hasPermission('documents.view_all')) {
+        if ($isViewer) {
+            $query->where('status', Document::STATUS_PUBLISHED);
+        } elseif (!$user->hasPermission('documents.view_all')) {
             $query->where(function ($q) use ($user) {
                 $q->where('created_by', $user->id)
                   ->orWhere('unit_id', $user->unit_id)
@@ -194,7 +200,7 @@ class DashboardController extends Controller
     /**
      * Get expiring documents
      */
-    protected function getExpiringDocuments($user)
+    protected function getExpiringDocuments($user, bool $isViewer = false)
     {
         $query = Document::with(['documentType', 'creator'])
             ->expiringSoon(30)
@@ -202,7 +208,7 @@ class DashboardController extends Controller
             ->orderBy('expiry_date', 'asc');
         
         // Filter based on user permissions
-        if (!$user->hasPermission('documents.view_all')) {
+        if (!$isViewer && !$user->hasPermission('documents.view_all')) {
             $query->where(function ($q) use ($user) {
                 $q->where('created_by', $user->id)
                   ->orWhere('unit_id', $user->unit_id);
@@ -215,8 +221,12 @@ class DashboardController extends Controller
     /**
      * Get recent activities for activity timeline
      */
-    protected function getRecentActivities($user)
+    protected function getRecentActivities($user, bool $isViewer = false)
     {
+        if ($isViewer) {
+            return collect();
+        }
+
         $query = DocumentHistory::with(['document', 'performer'])
             ->whereHas('document')
             ->orderBy('created_at', 'desc');

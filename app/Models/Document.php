@@ -401,9 +401,18 @@ class Document extends Model
      */
     public function scopeAccessibleBy($query, $user)
     {
-        // Admin can see all documents
-        if ($user->isAdmin()) {
+        if (!$user) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        // Admin or view-all can see all documents
+        if ($user->isAdmin() || $user->hasPermission('documents.view_all')) {
             return $query;
+        }
+
+        // Viewer can only see published documents
+        if ($user->hasRole('viewer')) {
+            return $query->where('status', self::STATUS_PUBLISHED);
         }
 
         return $query->where(function ($q) use ($user) {
@@ -513,5 +522,41 @@ class Document extends Model
             self::CONF_RESTRICTED => 'Terbatas',
             default => $this->confidentiality,
         };
+    }
+
+    /**
+     * Check if document is accessible by the given user
+     */
+    public function isAccessibleBy($user): bool
+    {
+        if (!$user) {
+            return false;
+        }
+
+        if ($user->isAdmin() || $user->hasPermission('documents.view_all')) {
+            return true;
+        }
+
+        if ($user->hasRole('viewer')) {
+            return $this->status === self::STATUS_PUBLISHED;
+        }
+
+        if ($this->created_by === $user->id) {
+            return true;
+        }
+
+        if ($this->status === self::STATUS_PUBLISHED) {
+            return true;
+        }
+
+        if ($user->unit_id && $this->unit_id === $user->unit_id) {
+            return true;
+        }
+
+        if ($user->directorate_id && $this->directorate_id === $user->directorate_id) {
+            return true;
+        }
+
+        return false;
     }
 }
