@@ -5,6 +5,7 @@ use App\Http\Controllers\Auth\PasswordController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\DocumentController;
+use App\Http\Controllers\PublicDocumentController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\Master\DirectorateController;
 use App\Http\Controllers\Master\UnitController;
@@ -27,9 +28,8 @@ use Illuminate\Support\Facades\Route;
 */
 
 // Public Routes
-Route::get('/', function () {
-    return redirect()->route('login');
-});
+Route::view('/', 'landing')->name('landing');
+Route::get('/dokumen-publik', [PublicDocumentController::class, 'index'])->name('public.documents');
 
 // Guest Routes (not authenticated)
 Route::middleware('guest')->group(function () {

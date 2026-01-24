@@ -1117,3 +1117,39 @@
         transform: translateX(-50%) rotate(360deg);
     }
 }
+
+/* ============================================
+   Landing Page Motion
+   ============================================ */
+.landing-reveal {
+    opacity: 0;
+    transform: translateY(12px);
+    animation: landing-reveal 0.7s ease-out forwards;
+}
+
+.landing-reveal-delay-1 {
+    animation-delay: 0.12s;
+}
+
+.landing-reveal-delay-2 {
+    animation-delay: 0.24s;
+}
+
+@keyframes landing-reveal {
+    0% {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .landing-reveal {
+        animation: none;
+        opacity: 1;
+        transform: none;
+    }
+}

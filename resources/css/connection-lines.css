@@ -1,0 +1,132 @@
+/* ==========================================================================
+   Connection Lines Animation - How It Works Section (Vertical Layout)
+   ========================================================================== */
+
+/* Line wrapper */
+.connection-line-wrapper {
+    overflow: visible;
+}
+
+/* Animated flowing dot */
+.flow-dot {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #00C4D6, #A4C639);
+    box-shadow:
+        0 0 10px rgba(0, 196, 214, 0.8),
+        0 0 20px rgba(164, 198, 57, 0.5),
+        0 0 30px rgba(0, 196, 214, 0.3);
+    animation: flow-down 2s ease-in-out infinite;
+}
+
+/* Second dot with delay for continuous flow effect */
+.connection-line-wrapper::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: rgba(164, 198, 57, 0.8);
+    box-shadow: 0 0 8px rgba(164, 198, 57, 0.6);
+    animation: flow-down 2s ease-in-out infinite 1s;
+}
+
+@keyframes flow-down {
+    0% {
+        top: 0;
+        opacity: 0;
+    }
+
+    10% {
+        opacity: 1;
+    }
+
+    90% {
+        opacity: 1;
+    }
+
+    100% {
+        top: calc(100% - 8px);
+        opacity: 0;
+    }
+}
+
+/* Glow pulse on the line */
+.connection-line-wrapper>div:first-child {
+    animation: line-pulse 2s ease-in-out infinite;
+}
+
+@keyframes line-pulse {
+
+    0%,
+    100% {
+        box-shadow: 0 0 5px rgba(0, 160, 176, 0.3);
+        opacity: 0.5;
+    }
+
+    50% {
+        box-shadow: 0 0 15px rgba(164, 198, 57, 0.5);
+        opacity: 0.8;
+    }
+}
+
+/* Step badges with subtle pulse */
+.step-badge {
+    animation: badge-pulse 3s ease-in-out infinite;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.step-badge:hover {
+    transform: scale(1.08);
+    box-shadow: 0 15px 30px -5px rgba(0, 160, 176, 0.4);
+}
+
+@keyframes badge-pulse {
+
+    0%,
+    100% {
+        box-shadow: 0 10px 15px -3px rgba(0, 160, 176, 0.3);
+    }
+
+    50% {
+        box-shadow: 0 10px 25px -3px rgba(0, 160, 176, 0.5);
+    }
+}
+
+/* Dark mode adjustments */
+.dark .flow-dot {
+    box-shadow:
+        0 0 12px rgba(0, 196, 214, 0.9),
+        0 0 25px rgba(164, 198, 57, 0.6),
+        0 0 35px rgba(0, 196, 214, 0.4);
+}
+
+.dark .connection-line-wrapper>div:first-child {
+    opacity: 0.4;
+}
+
+/* Reduce motion */
+@media (prefers-reduced-motion: reduce) {
+
+    .flow-dot,
+    .connection-line-wrapper::after,
+    .connection-line-wrapper>div:first-child,
+    .step-badge {
+        animation: none;
+    }
+
+    .flow-dot {
+        top: 50%;
+        opacity: 0.8;
+    }
+
+    .connection-line-wrapper::after {
+        display: none;
+    }
+}
