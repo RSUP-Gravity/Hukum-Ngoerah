@@ -139,7 +139,7 @@
                     <div class="rounded-xl border border-amber-500/20 bg-amber-500/10 p-4">
                         <div class="flex items-center gap-3">
                             @php
-                                $icon1 = match($version1->file_extension ?? 'pdf') {
+                                $icon1 = match(strtolower($version1->file_type ?? 'pdf')) {
                                     'pdf' => 'bi-file-earmark-pdf text-rose-400',
                                     'doc', 'docx' => 'bi-file-earmark-word text-sky-400',
                                     default => 'bi-file-earmark text-[var(--text-tertiary)]',
@@ -147,7 +147,7 @@
                             @endphp
                             <i class="bi {{ $icon1 }} text-2xl"></i>
                             <div>
-                                <div class="text-sm font-semibold text-[var(--text-primary)]">{{ $version1->original_filename }}</div>
+                                <div class="text-sm font-semibold text-[var(--text-primary)]">{{ $version1->file_name }}</div>
                                 <div class="text-xs text-[var(--text-tertiary)]">{{ $version1->file_size_formatted ?? number_format($version1->file_size / 1024, 0) . ' KB' }}</div>
                             </div>
                         </div>
@@ -155,7 +155,7 @@
                     <div class="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4">
                         <div class="flex items-center gap-3">
                             @php
-                                $icon2 = match($version2->file_extension ?? 'pdf') {
+                                $icon2 = match(strtolower($version2->file_type ?? 'pdf')) {
                                     'pdf' => 'bi-file-earmark-pdf text-rose-400',
                                     'doc', 'docx' => 'bi-file-earmark-word text-sky-400',
                                     default => 'bi-file-earmark text-[var(--text-tertiary)]',
@@ -163,7 +163,7 @@
                             @endphp
                             <i class="bi {{ $icon2 }} text-2xl"></i>
                             <div>
-                                <div class="text-sm font-semibold text-[var(--text-primary)]">{{ $version2->original_filename }}</div>
+                                <div class="text-sm font-semibold text-[var(--text-primary)]">{{ $version2->file_name }}</div>
                                 <div class="text-xs text-[var(--text-tertiary)]">{{ $version2->file_size_formatted ?? number_format($version2->file_size / 1024, 0) . ' KB' }}</div>
                             </div>
                         </div>
@@ -177,13 +177,13 @@
             </x-glass-card>
 
             {{-- Change Notes --}}
-            @if($version2->change_notes)
+            @if($version2->change_summary)
             <x-glass-card :hover="false" class="p-6">
                 <h3 class="text-sm font-semibold text-[var(--text-primary)]">
                     <i class="bi bi-sticky"></i>
                     Catatan Perubahan
                 </h3>
-                <p class="mt-3 text-sm text-[var(--text-secondary)]">{{ $version2->change_notes }}</p>
+                <p class="mt-3 text-sm text-[var(--text-secondary)]">{{ $version2->change_summary }}</p>
             </x-glass-card>
             @endif
         </div>

@@ -90,6 +90,10 @@ class PdfWatermarkService
      */
     protected function addWatermark(FpdiWithRotation $pdf, float $pageWidth, float $pageHeight): void
     {
+        $autoPageBreak = $pdf->getAutoPageBreak();
+        $bottomMargin = $pdf->getBottomMargin();
+        $pdf->SetAutoPageBreak(false, 0);
+
         // Set font
         $pdf->SetFont('Arial', 'B', $this->fontSize);
         
@@ -109,20 +113,21 @@ class PdfWatermarkService
 
         // Apply rotation around center
         $pdf->Rotate($this->angle, $centerX, $centerY);
-        
+
         // Position text at center
         $x = $centerX - ($textWidth / 2);
         $y = $centerY;
-        
+
         // Add the watermark text
-        $pdf->SetXY($x, $y);
-        $pdf->Cell($textWidth, $this->fontSize / 2.83, $this->watermarkText, 0, 0, 'C');
-        
+        $pdf->Text($x, $y, $this->watermarkText);
+
+        // Reset rotation before pattern
+        $pdf->Rotate(0);
+
         // Add additional diagonal watermarks for coverage
         $this->addDiagonalPattern($pdf, $pageWidth, $pageHeight);
-        
-        // Reset rotation
-        $pdf->Rotate(0);
+
+        $pdf->SetAutoPageBreak($autoPageBreak, $bottomMargin);
     }
 
     /**
@@ -135,19 +140,23 @@ class PdfWatermarkService
     protected function addDiagonalPattern(FpdiWithRotation $pdf, float $pageWidth, float $pageHeight): void
     {
         // Smaller font for pattern
-        $pdf->SetFont('Arial', 'B', 24);
-        
+        $pdf->SetFont('Arial', 'B', 18);
+
         // Light gray color
         $pdf->SetTextColor(220, 220, 220);
-        
+
         $textWidth = $pdf->GetStringWidth($this->watermarkText);
-        $spacing = 100;
-        
+        $spacingX = max(140, $textWidth + 80);
+        $spacingY = 90;
+        $startX = -$pageWidth;
+        $endX = $pageWidth * 2;
+        $startY = -$pageHeight;
+        $endY = $pageHeight * 2;
+
         // Create a grid of watermarks
-        for ($y = -$pageHeight; $y < $pageHeight * 2; $y += $spacing) {
-            for ($x = -$pageWidth; $x < $pageWidth * 2; $x += $spacing + $textWidth) {
-                $pdf->SetXY($x, $y);
-                $pdf->Cell($textWidth, 10, $this->watermarkText, 0, 0, 'C');
+        for ($y = $startY; $y < $endY; $y += $spacingY) {
+            for ($x = $startX; $x < $endX; $x += $spacingX) {
+                $pdf->RotatedText($this->angle, $x, $y, $this->watermarkText);
             }
         }
     }

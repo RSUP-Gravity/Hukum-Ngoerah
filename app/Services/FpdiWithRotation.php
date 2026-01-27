@@ -52,6 +52,22 @@ class FpdiWithRotation extends Fpdi
     }
 
     /**
+     * Get current auto page break flag.
+     */
+    public function getAutoPageBreak(): bool
+    {
+        return $this->AutoPageBreak;
+    }
+
+    /**
+     * Get current bottom margin used for auto page breaks.
+     */
+    public function getBottomMargin(): float
+    {
+        return $this->bMargin;
+    }
+
+    /**
      * Override _endpage to reset rotation
      */
     public function _endpage(): void

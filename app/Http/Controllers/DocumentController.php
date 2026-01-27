@@ -234,7 +234,7 @@ class DocumentController extends Controller
         $user = auth()->user();
         
         // Check access
-        if (!$user->isAdmin() && !$document->isAccessibleBy($user)) {
+        if (!$document->hasAccess($user, DocumentAccess::PERM_VIEW)) {
             abort(403, 'Anda tidak memiliki akses ke dokumen ini.');
         }
 
@@ -278,7 +278,25 @@ class DocumentController extends Controller
             ->limit(5)
             ->get();
 
-        return view('documents.show', compact('document', 'relatedDocuments'));
+        $approverCandidates = User::active()
+            ->whereHas('role.permissions', function ($query) {
+                $query->where('name', 'documents.approve');
+            })
+            ->with(['role:id,name,display_name', 'position:id,name', 'unit:id,name'])
+            ->orderBy('name')
+            ->get(['id', 'name', 'role_id', 'position_id', 'unit_id'])
+            ->map(function ($user) {
+                return [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'role' => $user->role?->display_name ?? $user->role?->name ?? '-',
+                    'position' => $user->position?->name ?? '-',
+                    'unit' => $user->unit?->name ?? '-',
+                ];
+            })
+            ->values();
+
+        return view('documents.show', compact('document', 'relatedDocuments', 'approverCandidates'));
     }
 
     /**
@@ -456,7 +474,7 @@ class DocumentController extends Controller
         // Record history
         DocumentHistory::create([
             'document_id' => $document->id,
-            'action' => DocumentHistory::ACTION_SUBMITTED,
+            'action' => DocumentHistory::ACTION_SUBMITTED_REVIEW,
             'performed_by' => $user->id,
             'old_values' => ['status' => $oldStatus],
             'new_values' => ['status' => Document::STATUS_PENDING_REVIEW],
@@ -507,8 +525,31 @@ class DocumentController extends Controller
         $user = auth()->user();
         
         // Only legal staff can submit for approval
-        if (!$user->hasRole(['legal_head', 'legal_staff', 'admin', 'super_admin'])) {
+        if (!$user->hasAnyRole(['legal_head', 'legal_staff', 'admin', 'super_admin'])) {
             return back()->with('error', 'Anda tidak memiliki akses untuk mengajukan approval.');
+        }
+
+        $validated = $request->validate([
+            'approvers' => ['required', 'array', 'min:1'],
+            'approvers.*' => ['required', 'integer', 'distinct', 'exists:users,id'],
+        ], [
+            'approvers.required' => 'Pilih minimal 1 approver.',
+            'approvers.min' => 'Pilih minimal 1 approver.',
+            'approvers.*.exists' => 'Approver tidak valid.',
+        ]);
+
+        $approverIds = array_values($validated['approvers'] ?? []);
+
+        $validApproverIds = User::active()
+            ->whereIn('id', $approverIds)
+            ->whereHas('role.permissions', function ($query) {
+                $query->where('name', 'documents.approve');
+            })
+            ->pluck('id')
+            ->all();
+
+        if (count($validApproverIds) !== count($approverIds)) {
+            return back()->withInput()->with('error', 'Approver harus memiliki izin approve.');
         }
 
         $oldStatus = $document->status;
@@ -521,22 +562,20 @@ class DocumentController extends Controller
         ]);
 
         // Create approval chain if provided
-        if ($request->filled('approvers')) {
-            $sequence = 1;
-            foreach ($request->approvers as $approverId) {
-                DocumentApproval::create([
-                    'document_id' => $document->id,
-                    'approver_id' => $approverId,
-                    'sequence' => $sequence++,
-                    'status' => 'pending',
-                ]);
-            }
+        $sequence = 1;
+        foreach ($approverIds as $approverId) {
+            DocumentApproval::create([
+                'document_id' => $document->id,
+                'approver_id' => $approverId,
+                'sequence' => $sequence++,
+                'status' => 'pending',
+            ]);
         }
 
         // Record history
         DocumentHistory::create([
             'document_id' => $document->id,
-            'action' => DocumentHistory::ACTION_SENT_FOR_APPROVAL,
+            'action' => DocumentHistory::ACTION_SUBMITTED_APPROVAL,
             'performed_by' => $user->id,
             'old_values' => ['status' => $oldStatus],
             'new_values' => ['status' => Document::STATUS_PENDING_APPROVAL],
@@ -598,8 +637,8 @@ class DocumentController extends Controller
             // Update approval
             $approval->update([
                 'status' => 'approved',
-                'notes' => $request->notes,
-                'approved_at' => now(),
+                'comments' => $request->notes,
+                'responded_at' => now(),
             ]);
 
             // Record history
@@ -708,8 +747,8 @@ class DocumentController extends Controller
                 ->where('status', 'pending')
                 ->update([
                     'status' => 'rejected',
-                    'notes' => $request->rejection_reason,
-                    'approved_at' => now(),
+                    'comments' => $request->rejection_reason,
+                    'responded_at' => now(),
                 ]);
 
             // Update document status
@@ -877,7 +916,12 @@ class DocumentController extends Controller
         ]);
 
         $filePath = Storage::disk('public')->path($version->file_path);
-        $filename = $version->original_filename ?? "{$document->document_number}.{$version->file_extension}";
+        $filename = $version->file_name;
+        if (!$filename) {
+            $extension = $version->file_type ?: pathinfo($version->file_path, PATHINFO_EXTENSION);
+            $extension = $extension ? ".{$extension}" : '';
+            $filename = "{$document->document_number}{$extension}";
+        }
 
         // Admin downloads original file, others get watermarked version
         if ($user->isAdmin() || $user->hasRole('super_admin')) {
@@ -1022,7 +1066,7 @@ class DocumentController extends Controller
 
         $request->validate([
             'file' => ['required', 'file', 'mimes:pdf,doc,docx', 'max:51200'],
-            'change_notes' => ['nullable', 'string'],
+            'change_summary' => ['nullable', 'string'],
         ], [
             'file.required' => 'File wajib diunggah.',
             'file.mimes' => 'File harus berformat PDF, DOC, atau DOCX.',
@@ -1043,7 +1087,8 @@ class DocumentController extends Controller
             $user = auth()->user();
             $newVersion = $document->current_version + 1;
 
-            $this->uploadDocumentFile($document, $file, $newVersion, $request->change_notes);
+            $changeSummary = $request->input('change_summary') ?? $request->input('change_notes');
+            $this->uploadDocumentFile($document, $file, $newVersion, $changeSummary);
             
             $document->update([
                 'current_version' => $newVersion,
@@ -1056,7 +1101,7 @@ class DocumentController extends Controller
                 'performed_by' => $user->id,
                 'new_values' => [
                     'version' => $newVersion,
-                    'change_notes' => $request->change_notes,
+                    'change_summary' => $changeSummary,
                 ],
                 'description' => "Versi {$newVersion} diunggah.",
             ]);
@@ -1307,11 +1352,10 @@ class DocumentController extends Controller
     /**
      * Upload document file
      */
-    protected function uploadDocumentFile(Document $document, $file, int $versionNumber, ?string $changeNotes = null): DocumentVersion
+    protected function uploadDocumentFile(Document $document, $file, int $versionNumber, ?string $changeSummary = null): DocumentVersion
     {
         $originalFilename = $file->getClientOriginalName();
-        $extension = $file->getClientOriginalExtension();
-        $mimeType = $file->getMimeType();
+        $extension = strtolower($file->getClientOriginalExtension());
         $fileSize = $file->getSize();
         
         // Generate unique filename
@@ -1329,18 +1373,25 @@ class DocumentController extends Controller
         // Calculate file hash
         $hash = hash_file('sha256', $file->getRealPath());
 
-        return DocumentVersion::create([
+        $version = DocumentVersion::create([
             'document_id' => $document->id,
             'version_number' => $versionNumber,
             'file_path' => $path,
-            'original_filename' => $originalFilename,
+            'file_name' => $originalFilename,
+            'file_type' => $extension,
             'file_size' => $fileSize,
-            'file_extension' => $extension,
-            'mime_type' => $mimeType,
             'file_hash' => $hash,
-            'change_notes' => $changeNotes,
+            'change_summary' => $changeSummary,
+            'change_type' => $versionNumber === 1 ? DocumentVersion::CHANGE_INITIAL : DocumentVersion::CHANGE_MINOR,
+            'is_current' => true,
             'uploaded_by' => auth()->id(),
         ]);
+
+        DocumentVersion::where('document_id', $document->id)
+            ->where('id', '!=', $version->id)
+            ->update(['is_current' => false]);
+
+        return $version;
     }
 
     /**
@@ -1513,10 +1564,10 @@ class DocumentController extends Controller
             ];
         }
 
-        if ($v1->original_filename !== $v2->original_filename) {
+        if ($v1->file_name !== $v2->file_name) {
             $diff['filename'] = [
-                'old' => $v1->original_filename,
-                'new' => $v2->original_filename,
+                'old' => $v1->file_name,
+                'new' => $v2->file_name,
             ];
         }
 
@@ -1557,12 +1608,12 @@ class DocumentController extends Controller
             'document_id' => $document->id,
             'version_number' => $newVersionNumber,
             'file_path' => $version->file_path,
-            'original_filename' => $version->original_filename,
+            'file_name' => $version->file_name,
             'file_size' => $version->file_size,
-            'file_extension' => $version->file_extension,
-            'mime_type' => $version->mime_type,
+            'file_type' => $version->file_type,
             'file_hash' => $version->file_hash,
-            'change_notes' => "Dipulihkan dari versi {$version->version_number}",
+            'change_summary' => "Dipulihkan dari versi {$version->version_number}",
+            'change_type' => DocumentVersion::CHANGE_CORRECTION,
             'uploaded_by' => $user->id,
             'is_current' => true,
         ]);

@@ -51,6 +51,9 @@ class DocumentHistory extends Model
     const ACTION_COMMENT = 'comment_added';
     const ACTION_STATUS_CHANGED = 'status_changed';
     const ACTION_VERSION_RESTORED = 'version_restored';
+    const ACTION_ACCESS_GRANTED = 'access_granted';
+    const ACTION_ACCESS_REVOKED = 'access_revoked';
+    const ACTION_VERSION_ADDED = self::ACTION_VERSION_UPLOADED;
 
     /**
      * Action labels map
@@ -78,6 +81,8 @@ class DocumentHistory extends Model
         self::ACTION_COMMENT => 'Komentar ditambahkan',
         self::ACTION_STATUS_CHANGED => 'Status diubah',
         self::ACTION_VERSION_RESTORED => 'Versi dipulihkan',
+        self::ACTION_ACCESS_GRANTED => 'Akses diberikan',
+        self::ACTION_ACCESS_REVOKED => 'Akses dicabut',
     ];
 
     /**
@@ -132,6 +137,8 @@ class DocumentHistory extends Model
             self::ACTION_COMMENT => 'Komentar ditambahkan',
             self::ACTION_STATUS_CHANGED => 'Status diubah',
             self::ACTION_VERSION_RESTORED => 'Versi dipulihkan',
+            self::ACTION_ACCESS_GRANTED => 'Akses diberikan',
+            self::ACTION_ACCESS_REVOKED => 'Akses dicabut',
             default => $this->action,
         };
     }
@@ -156,6 +163,8 @@ class DocumentHistory extends Model
             self::ACTION_DOWNLOADED => 'arrow-down-tray',
             self::ACTION_LOCKED => 'lock-closed',
             self::ACTION_UNLOCKED => 'lock-open',
+            self::ACTION_ACCESS_GRANTED => 'key',
+            self::ACTION_ACCESS_REVOKED => 'lock-closed',
             default => 'information-circle',
         };
     }

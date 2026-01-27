@@ -103,7 +103,7 @@
                                 <div class="flex items-center gap-3 rounded-lg border border-[var(--surface-glass-border)] bg-[var(--surface-glass)] p-3">
                                     <i class="bi bi-file-earmark-pdf text-2xl text-red-500"></i>
                                     <div class="flex-1">
-                                        <div class="text-sm font-semibold text-[var(--text-primary)]">{{ $document->currentVersion->original_filename }}</div>
+                                        <div class="text-sm font-semibold text-[var(--text-primary)]">{{ $document->currentVersion->file_name }}</div>
                                         <div class="text-xs text-[var(--text-tertiary)]">
                                             Versi {{ $document->current_version }} •
                                             {{ number_format($document->currentVersion->file_size / 1024, 0) }} KB •

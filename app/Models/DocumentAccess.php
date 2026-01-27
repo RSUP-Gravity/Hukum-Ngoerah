@@ -36,6 +36,15 @@ class DocumentAccess extends Model
     const PERM_APPROVE = 'approve';
     const PERM_FULL = 'full';
 
+    const PERMISSIONS = [
+        self::PERM_VIEW => 'Lihat',
+        self::PERM_DOWNLOAD => 'Unduh',
+        self::PERM_EDIT => 'Edit',
+        self::PERM_DELETE => 'Hapus',
+        self::PERM_APPROVE => 'Setujui',
+        self::PERM_FULL => 'Penuh',
+    ];
+
     /**
      * Get the document
      */

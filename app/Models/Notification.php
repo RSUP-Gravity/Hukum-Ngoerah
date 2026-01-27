@@ -33,6 +33,10 @@ class Notification extends Model
      * Type constants
      */
     const TYPE_DOCUMENT_APPROVAL = 'document_approval';
+    const TYPE_DOCUMENT_SUBMITTED = 'document_submitted';
+    const TYPE_APPROVAL_REQUIRED = 'approval_required';
+    const TYPE_APPROVAL_APPROVED = 'approval_approved';
+    const TYPE_APPROVAL_REJECTED = 'approval_rejected';
     const TYPE_DOCUMENT_EXPIRED = 'document_expired';
     const TYPE_DOCUMENT_EXPIRING = 'document_expiring';
     const TYPE_REMINDER = 'reminder';
@@ -83,6 +87,10 @@ class Notification extends Model
     {
         return match ($this->type) {
             self::TYPE_DOCUMENT_APPROVAL => 'Persetujuan Dokumen',
+            self::TYPE_DOCUMENT_SUBMITTED => 'Dokumen Diajukan',
+            self::TYPE_APPROVAL_REQUIRED => 'Persetujuan Diperlukan',
+            self::TYPE_APPROVAL_APPROVED => 'Dokumen Disetujui',
+            self::TYPE_APPROVAL_REJECTED => 'Dokumen Ditolak',
             self::TYPE_DOCUMENT_EXPIRED => 'Dokumen Kadaluarsa',
             self::TYPE_DOCUMENT_EXPIRING => 'Dokumen Akan Kadaluarsa',
             self::TYPE_REMINDER => 'Pengingat',

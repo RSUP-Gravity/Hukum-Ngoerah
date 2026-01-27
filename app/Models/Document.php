@@ -208,9 +208,17 @@ class Document extends Model
     /**
      * Get current version
      */
-    public function currentVersionRelation(): HasOne
+    public function currentVersion(): HasOne
     {
         return $this->hasOne(DocumentVersion::class)->where('is_current', true);
+    }
+
+    /**
+     * Get current version (legacy alias)
+     */
+    public function currentVersionRelation(): HasOne
+    {
+        return $this->currentVersion();
     }
 
     /**
@@ -227,6 +235,16 @@ class Document extends Model
     public function approvals(): HasMany
     {
         return $this->hasMany(DocumentApproval::class)->orderBy('sequence');
+    }
+
+    /**
+     * Get latest approval (approved or rejected)
+     */
+    public function latestApproval(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(DocumentApproval::class)
+            ->whereIn('status', [DocumentApproval::STATUS_APPROVED, DocumentApproval::STATUS_REJECTED])
+            ->latest('responded_at');
     }
 
     /**
@@ -555,6 +573,42 @@ class Document extends Model
 
         if ($user->directorate_id && $this->directorate_id === $user->directorate_id) {
             return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Check if user has specific access level for this document
+     */
+    public function hasAccess(?User $user, string $permission = DocumentAccess::PERM_VIEW): bool
+    {
+        if (!$user) {
+            return false;
+        }
+
+        $permission = $permission ?: DocumentAccess::PERM_VIEW;
+
+        if ($user->isAdmin() || $user->hasPermission('documents.view_all')) {
+            return true;
+        }
+
+        if ($this->created_by === $user->id) {
+            return true;
+        }
+
+        $explicitAccess = $this->accessPermissions()
+            ->valid()
+            ->forUser($user)
+            ->get()
+            ->contains(fn (DocumentAccess $access) => $access->hasPermission($permission));
+
+        if ($explicitAccess) {
+            return true;
+        }
+
+        if (in_array($permission, [DocumentAccess::PERM_VIEW, DocumentAccess::PERM_DOWNLOAD], true)) {
+            return $this->isAccessibleBy($user);
         }
 
         return false;

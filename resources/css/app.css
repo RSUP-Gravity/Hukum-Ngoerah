@@ -538,7 +538,8 @@
     }
 
     html:not(.dark) .sidebar-item:hover {
-        background: var(--surface-glass-elevated);
+        background: linear-gradient(90deg, rgba(0, 160, 176, 0.08), rgba(184, 217, 77, 0.08));
+        border-left-color: rgba(0, 160, 176, 0.35);
     }
 
     .sidebar-item.active {
@@ -546,6 +547,11 @@
         color: white;
         border-left-color: var(--color-lime);
         box-shadow: 0 4px 15px rgba(0, 160, 176, 0.3);
+    }
+
+    html:not(.dark) .sidebar-item.active:hover {
+        background: var(--gradient-primary-hover);
+        box-shadow: 0 6px 18px rgba(0, 160, 176, 0.35), inset 0 0 0 1px rgba(255, 255, 255, 0.55);
     }
 
     .dark .sidebar-item.active {
@@ -898,6 +904,10 @@
     position: relative;
     overflow: hidden;
     touch-action: pan-y pinch-zoom;
+}
+
+.swipe-container.allow-overflow {
+    overflow: visible;
 }
 
 /* Swipeable content wrapper */

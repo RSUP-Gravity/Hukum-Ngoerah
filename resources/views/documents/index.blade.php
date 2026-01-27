@@ -77,8 +77,20 @@
     </x-glass-card>
 
     {{-- Filters --}}
-    <x-glass-card :hover="false" class="p-6" x-data="{ advancedOpen: {{ request()->hasAny(['date_from', 'date_to', 'category_id', 'expired', 'expiring_days']) ? 'true' : 'false' }} }">
-        <form action="{{ route('documents.index') }}" method="GET" id="filterForm" class="space-y-4">
+    @php
+        $advancedKeys = ['date_from', 'date_to', 'category_id', 'expired', 'expiring_days'];
+        $advancedActiveCount = 0;
+        foreach ($advancedKeys as $key) {
+            if ($key === 'expired') {
+                $advancedActiveCount += request()->boolean('expired') ? 1 : 0;
+            } else {
+                $advancedActiveCount += request()->filled($key) ? 1 : 0;
+            }
+        }
+        $hasFilters = request()->hasAny(['search', 'type_id', 'status', 'unit_id', 'category_id', 'date_from', 'date_to', 'expiring_days', 'expired']);
+    @endphp
+    <x-glass-card :hover="false" class="p-6 overflow-visible z-40" x-data="autoFilter({ advancedOpen: {{ $advancedActiveCount > 0 ? 'true' : 'false' }} })">
+        <form action="{{ route('documents.index') }}" method="GET" id="filterForm" class="space-y-4" x-ref="form">
             <div class="grid grid-cols-1 gap-4 lg:grid-cols-12">
                 <div class="lg:col-span-4">
                     <label class="text-sm font-medium text-[var(--text-primary)]">Pencarian</label>
@@ -165,15 +177,25 @@
                     </select>
                 </div>
 
-                <div class="lg:col-span-2 flex flex-wrap items-end gap-2">
-                    <x-button type="submit" size="sm">Filter</x-button>
-                    <x-button href="{{ route('documents.index') }}" size="sm" variant="secondary">Reset</x-button>
+                <div class="lg:col-span-2 flex flex-col gap-2 lg:items-end">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <span class="inline-flex items-center gap-2 text-xs text-[var(--text-tertiary)]">
+                            <span class="h-2 w-2 rounded-full bg-emerald-400"></span>
+                            Auto diterapkan
+                        </span>
+                        <button type="submit" class="sr-only">Terapkan</button>
+                    </div>
 
                     <div class="inline-flex items-center gap-2">
+                        <a href="{{ route('documents.index') }}" class="btn-secondary px-3 py-2 rounded-lg {{ $hasFilters ? '' : 'pointer-events-none opacity-50' }}" aria-label="Reset filter" title="Reset filter">
+                            <i class="bi bi-arrow-counterclockwise"></i>
+                            <span class="sr-only">Reset</span>
+                        </a>
+
                         {{-- Export Dropdown --}}
-                        <x-dropdown align="right" width="56">
+                        <x-dropdown align="right" width="56" contentClasses="z-[70]">
                             <x-slot name="trigger">
-                                <button class="btn-secondary px-3 py-2 rounded-lg" type="button" aria-label="Export">
+                                <button class="btn-secondary px-3 py-2 rounded-lg" type="button" aria-label="Export" title="Export">
                                     <i class="bi bi-download"></i>
                                 </button>
                             </x-slot>
@@ -187,9 +209,9 @@
 
                         {{-- Filter Presets Dropdown --}}
                         <div x-data="filterPresets()">
-                            <x-dropdown align="right" width="64" :closeOnClick="false">
+                            <x-dropdown align="right" width="64" :closeOnClick="false" contentClasses="z-[70]">
                                 <x-slot name="trigger">
-                                    <button class="btn-secondary px-3 py-2 rounded-lg" type="button" aria-label="Filter presets">
+                                    <button class="btn-secondary px-3 py-2 rounded-lg" type="button" aria-label="Filter presets" title="Preset filter">
                                         <i class="bi bi-bookmark"></i>
                                     </button>
                                 </x-slot>
@@ -200,7 +222,7 @@
                                 <div class="px-4 py-3 space-y-2">
                                     <div class="flex items-center gap-2">
                                         <input type="text" class="glass-input h-9" placeholder="Nama preset..." x-model="newPresetName" @keydown.enter.prevent="savePreset()">
-                                        <button class="btn-primary px-3 py-2 rounded-lg" type="button" @click="savePreset()" :disabled="!newPresetName.trim()">
+                                        <button class="btn-primary px-3 py-2 rounded-lg" type="button" @click="savePreset()" :disabled="!newPresetName.trim()" aria-label="Simpan preset">
                                             <i class="bi bi-save"></i>
                                         </button>
                                     </div>
@@ -218,7 +240,7 @@
                                                 <i class="bi bi-bookmark-fill mr-2 text-primary-500"></i>
                                                 <span x-text="preset.name"></span>
                                             </button>
-                                            <button type="button" class="text-sm text-red-500 hover:text-red-600" @click.stop="deletePreset(index)">
+                                            <button type="button" class="text-sm text-red-500 hover:text-red-600" @click.stop="deletePreset(index)" aria-label="Hapus preset">
                                                 <i class="bi bi-trash"></i>
                                             </button>
                                         </div>
@@ -234,6 +256,11 @@
             <div>
                 <button type="button" class="text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)]" @click="advancedOpen = !advancedOpen">
                     <i class="bi bi-sliders mr-1"></i>Filter Lanjutan
+                    @if($advancedActiveCount > 0)
+                        <span class="ml-2 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-amber-500/15 px-1.5 text-xs font-semibold text-amber-500">
+                            {{ $advancedActiveCount }}
+                        </span>
+                    @endif
                 </button>
 
                 <div x-show="advancedOpen" x-transition class="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-12">
@@ -618,7 +645,7 @@
                     @endphp
 
                     {{-- Swipeable Card Container for Mobile --}}
-                    <div class="swipe-container"
+                    <div class="swipe-container allow-overflow"
                          x-data="swipeableCard({ documentId: {{ $document->id }}, hasDownload: {{ $document->currentVersion ? 'true' : 'false' }}, canEdit: {{ $document->isEditable() ? 'true' : 'false' }} })"
                          @touchstart="handleTouchStart"
                          @touchmove="handleTouchMove"
@@ -732,7 +759,7 @@
                                     </div>
                                     <x-dropdown align="right" width="56">
                                         <x-slot name="trigger">
-                                            <button class="btn-ghost px-2 py-2 rounded-lg" type="button" aria-label="Aksi" @click.stop>
+                                            <button class="btn-ghost px-2 py-2 rounded-lg" type="button" aria-label="Aksi">
                                                 <i class="bi bi-three-dots"></i>
                                             </button>
                                         </x-slot>
@@ -1092,6 +1119,56 @@ function documentsIndex() {
             });
         }
     }
+}
+
+// Auto-apply filter changes
+function autoFilter(config = {}) {
+    return {
+        advancedOpen: config.advancedOpen ?? false,
+        submitTimer: null,
+        
+        init() {
+            this.bindAutoApply();
+        },
+        
+        bindAutoApply() {
+            const form = this.$refs.form;
+            if (!form) return;
+            
+            const fields = form.querySelectorAll('input, select, textarea');
+            fields.forEach((field) => {
+                if (!field.name) return;
+                if (field.dataset.noAutoSubmit !== undefined) return;
+                
+                const isTextInput = field.tagName === 'INPUT' && ['text', 'search'].includes(field.type);
+                const handler = (event) => this.queueSubmit(event);
+                
+                field.addEventListener(isTextInput ? 'input' : 'change', handler);
+                
+                if (isTextInput) {
+                    field.addEventListener('change', handler);
+                }
+            });
+        },
+        
+        queueSubmit(event) {
+            const target = event?.target;
+            if (!target) return;
+            
+            if (target.name === 'search') {
+                const value = target.value.trim();
+                if (value.length === 1) {
+                    return;
+                }
+            }
+            
+            const delay = event.type === 'input' ? 500 : 150;
+            clearTimeout(this.submitTimer);
+            this.submitTimer = setTimeout(() => {
+                this.$refs.form?.submit();
+            }, delay);
+        },
+    };
 }
 
 // Filter Presets Alpine Component
