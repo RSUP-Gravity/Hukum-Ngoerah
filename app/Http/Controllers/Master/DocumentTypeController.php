@@ -3,12 +3,20 @@
 namespace App\Http\Controllers\Master;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Master\DocumentTypeRequest;
 use App\Models\AuditLog;
 use App\Models\DocumentType;
 use Illuminate\Http\Request;
 
 class DocumentTypeController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:master.create')->only(['create', 'store']);
+        $this->middleware('permission:master.edit')->only(['edit', 'update']);
+        $this->middleware('permission:master.delete')->only(['destroy']);
+    }
+
     /**
      * Display a listing of document types
      */
@@ -45,25 +53,12 @@ class DocumentTypeController extends Controller
     /**
      * Store a newly created document type
      */
-    public function store(Request $request)
+    public function store(DocumentTypeRequest $request)
     {
-        $validated = $request->validate([
-            'code' => ['required', 'string', 'max:20', 'unique:document_types'],
-            'name' => ['required', 'string', 'max:150'],
-            'description' => ['nullable', 'string'],
-            'prefix' => ['required', 'string', 'max:10'],
-            'requires_approval' => ['boolean'],
-            'has_expiry' => ['boolean'],
-            'default_retention_days' => ['nullable', 'integer', 'min:1'],
-            'is_active' => ['boolean'],
-        ], [
-            'code.required' => 'Kode jenis dokumen wajib diisi.',
-            'code.unique' => 'Kode jenis dokumen sudah digunakan.',
-            'name.required' => 'Nama jenis dokumen wajib diisi.',
-            'prefix.required' => 'Prefix nomor dokumen wajib diisi.',
-        ]);
-
-        $validated['sort_order'] = DocumentType::max('sort_order') + 1;
+        $validated = $request->validated();
+        if (!array_key_exists('sort_order', $validated) || $validated['sort_order'] === null) {
+            $validated['sort_order'] = (int) DocumentType::max('sort_order') + 1;
+        }
 
         $documentType = DocumentType::create($validated);
 
@@ -105,28 +100,17 @@ class DocumentTypeController extends Controller
     /**
      * Update the specified document type
      */
-    public function update(Request $request, DocumentType $documentType)
+    public function update(DocumentTypeRequest $request, DocumentType $documentType)
     {
-        $validated = $request->validate([
-            'code' => ['required', 'string', 'max:20', "unique:document_types,code,{$documentType->id}"],
-            'name' => ['required', 'string', 'max:150'],
-            'description' => ['nullable', 'string'],
-            'prefix' => ['required', 'string', 'max:10'],
-            'requires_approval' => ['boolean'],
-            'has_expiry' => ['boolean'],
-            'default_retention_days' => ['nullable', 'integer', 'min:1'],
-            'is_active' => ['boolean'],
-        ], [
-            'code.required' => 'Kode jenis dokumen wajib diisi.',
-            'code.unique' => 'Kode jenis dokumen sudah digunakan.',
-            'name.required' => 'Nama jenis dokumen wajib diisi.',
-            'prefix.required' => 'Prefix nomor dokumen wajib diisi.',
+        $validated = $request->validated();
+        $oldValues = $documentType->only([
+            'code', 'name', 'description', 'prefix',
+            'requires_approval', 'has_expiry', 'default_retention_days', 'is_active', 'sort_order'
         ]);
 
-        $oldValues = $documentType->only([
-            'code', 'name', 'description', 'prefix', 
-            'requires_approval', 'has_expiry', 'default_retention_days', 'is_active'
-        ]);
+        if (!array_key_exists('sort_order', $validated) || $validated['sort_order'] === null) {
+            $validated['sort_order'] = $documentType->sort_order;
+        }
 
         $documentType->update($validated);
 
@@ -150,6 +134,10 @@ class DocumentTypeController extends Controller
      */
     public function destroy(DocumentType $documentType)
     {
+        if ($documentType->categories()->exists()) {
+            return back()->with('error', 'Jenis dokumen tidak dapat dihapus karena masih memiliki kategori.');
+        }
+
         // Check if document type has documents
         if ($documentType->documents()->exists()) {
             return back()->with('error', 'Jenis dokumen tidak dapat dihapus karena masih memiliki dokumen.');

@@ -612,7 +612,8 @@
 
     /* Dropdown */
     .glass-dropdown {
-        @apply absolute z-50 mt-2 py-2 rounded-xl overflow-hidden;
+        @apply absolute mt-2 py-2 rounded-xl overflow-hidden;
+        z-index: 70;
         min-width: 200px;
         background: linear-gradient(135deg, var(--surface-glass-elevated), var(--surface-glass-highlight));
         backdrop-filter: blur(16px);

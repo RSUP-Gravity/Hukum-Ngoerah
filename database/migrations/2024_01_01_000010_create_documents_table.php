@@ -66,7 +66,9 @@ return new class extends Migration
             $table->index('expiry_date');
             $table->index('created_by');
             $table->index('confidentiality');
-            $table->fullText(['title', 'description', 'keywords']);
+            if (Schema::getConnection()->getDriverName() !== 'sqlite') {
+                $table->fullText(['title', 'description', 'keywords']);
+            }
         });
     }
 

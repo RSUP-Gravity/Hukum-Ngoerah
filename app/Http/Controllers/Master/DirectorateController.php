@@ -3,12 +3,20 @@
 namespace App\Http\Controllers\Master;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Master\DirectorateRequest;
 use App\Models\AuditLog;
 use App\Models\Directorate;
 use Illuminate\Http\Request;
 
 class DirectorateController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:master.create')->only(['create', 'store']);
+        $this->middleware('permission:master.edit')->only(['edit', 'update']);
+        $this->middleware('permission:master.delete')->only(['destroy']);
+    }
+
     /**
      * Display a listing of directorates
      */
@@ -45,20 +53,12 @@ class DirectorateController extends Controller
     /**
      * Store a newly created directorate
      */
-    public function store(Request $request)
+    public function store(DirectorateRequest $request)
     {
-        $validated = $request->validate([
-            'code' => ['required', 'string', 'max:20', 'unique:directorates'],
-            'name' => ['required', 'string', 'max:150'],
-            'description' => ['nullable', 'string'],
-            'is_active' => ['boolean'],
-        ], [
-            'code.required' => 'Kode direktorat wajib diisi.',
-            'code.unique' => 'Kode direktorat sudah digunakan.',
-            'name.required' => 'Nama direktorat wajib diisi.',
-        ]);
-
-        $validated['sort_order'] = Directorate::max('sort_order') + 1;
+        $validated = $request->validated();
+        if (!array_key_exists('sort_order', $validated) || $validated['sort_order'] === null) {
+            $validated['sort_order'] = (int) Directorate::max('sort_order') + 1;
+        }
 
         $directorate = Directorate::create($validated);
 
@@ -100,20 +100,14 @@ class DirectorateController extends Controller
     /**
      * Update the specified directorate
      */
-    public function update(Request $request, Directorate $directorate)
+    public function update(DirectorateRequest $request, Directorate $directorate)
     {
-        $validated = $request->validate([
-            'code' => ['required', 'string', 'max:20', "unique:directorates,code,{$directorate->id}"],
-            'name' => ['required', 'string', 'max:150'],
-            'description' => ['nullable', 'string'],
-            'is_active' => ['boolean'],
-        ], [
-            'code.required' => 'Kode direktorat wajib diisi.',
-            'code.unique' => 'Kode direktorat sudah digunakan.',
-            'name.required' => 'Nama direktorat wajib diisi.',
-        ]);
+        $validated = $request->validated();
+        $oldValues = $directorate->only(['code', 'name', 'description', 'is_active', 'sort_order']);
 
-        $oldValues = $directorate->only(['code', 'name', 'description', 'is_active']);
+        if (!array_key_exists('sort_order', $validated) || $validated['sort_order'] === null) {
+            $validated['sort_order'] = $directorate->sort_order;
+        }
 
         $directorate->update($validated);
 

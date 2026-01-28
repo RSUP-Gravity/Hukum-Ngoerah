@@ -3,12 +3,20 @@
 namespace App\Http\Controllers\Master;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Master\PositionRequest;
 use App\Models\AuditLog;
 use App\Models\Position;
 use Illuminate\Http\Request;
 
 class PositionController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:master.create')->only(['create', 'store']);
+        $this->middleware('permission:master.edit')->only(['edit', 'update']);
+        $this->middleware('permission:master.delete')->only(['destroy']);
+    }
+
     /**
      * Display a listing of positions
      */
@@ -50,22 +58,12 @@ class PositionController extends Controller
     /**
      * Store a newly created position
      */
-    public function store(Request $request)
+    public function store(PositionRequest $request)
     {
-        $validated = $request->validate([
-            'code' => ['required', 'string', 'max:20', 'unique:positions'],
-            'name' => ['required', 'string', 'max:150'],
-            'level' => ['required', 'integer', 'min:0', 'max:100'],
-            'can_approve_documents' => ['boolean'],
-            'is_active' => ['boolean'],
-        ], [
-            'code.required' => 'Kode jabatan wajib diisi.',
-            'code.unique' => 'Kode jabatan sudah digunakan.',
-            'name.required' => 'Nama jabatan wajib diisi.',
-            'level.required' => 'Level jabatan wajib diisi.',
-        ]);
-
-        $validated['sort_order'] = Position::max('sort_order') + 1;
+        $validated = $request->validated();
+        if (!array_key_exists('sort_order', $validated) || $validated['sort_order'] === null) {
+            $validated['sort_order'] = (int) Position::max('sort_order') + 1;
+        }
 
         $position = Position::create($validated);
 
@@ -107,22 +105,14 @@ class PositionController extends Controller
     /**
      * Update the specified position
      */
-    public function update(Request $request, Position $position)
+    public function update(PositionRequest $request, Position $position)
     {
-        $validated = $request->validate([
-            'code' => ['required', 'string', 'max:20', "unique:positions,code,{$position->id}"],
-            'name' => ['required', 'string', 'max:150'],
-            'level' => ['required', 'integer', 'min:0', 'max:100'],
-            'can_approve_documents' => ['boolean'],
-            'is_active' => ['boolean'],
-        ], [
-            'code.required' => 'Kode jabatan wajib diisi.',
-            'code.unique' => 'Kode jabatan sudah digunakan.',
-            'name.required' => 'Nama jabatan wajib diisi.',
-            'level.required' => 'Level jabatan wajib diisi.',
-        ]);
+        $validated = $request->validated();
+        $oldValues = $position->only(['code', 'name', 'level', 'can_approve_documents', 'is_active', 'sort_order']);
 
-        $oldValues = $position->only(['code', 'name', 'level', 'can_approve_documents', 'is_active']);
+        if (!array_key_exists('sort_order', $validated) || $validated['sort_order'] === null) {
+            $validated['sort_order'] = $position->sort_order;
+        }
 
         $position->update($validated);
 

@@ -11,6 +11,11 @@
 @endsection
 
 @section('content')
+@php
+    $hasFilters = request()->filled('search') || request()->filled('active') || request()->filled('can_approve');
+    $resultFrom = $positions->firstItem() ?? 0;
+    $resultTo = $positions->lastItem() ?? 0;
+@endphp
 <div class="space-y-6">
     {{-- Page Header --}}
     <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -25,6 +30,88 @@
             </x-button>
         @endcan
     </div>
+
+    {{-- Filters --}}
+    <x-glass-card :hover="false" class="p-6 overflow-visible relative z-20">
+        <form action="{{ route('master.positions.index') }}" method="GET" class="space-y-4">
+            <div class="grid grid-cols-1 gap-4 lg:grid-cols-12">
+                <div class="lg:col-span-5 space-y-1.5">
+                    <label class="text-sm font-medium text-[var(--text-primary)]">Pencarian</label>
+                    <div class="relative">
+                        <i class="bi bi-search absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)]"></i>
+                        <input type="text" class="glass-input pl-10" name="search"
+                               value="{{ request('search') }}" placeholder="Cari nama atau kode jabatan...">
+                    </div>
+                </div>
+                <div class="lg:col-span-3">
+                    <x-select
+                        name="can_approve"
+                        label="Hak Approve"
+                        placeholder="Semua"
+                        :options="['1' => 'Dapat Approve', '0' => 'Tidak Dapat']"
+                        :value="request('can_approve')"
+                    />
+                </div>
+                <div class="lg:col-span-2">
+                    <x-select
+                        name="active"
+                        label="Status"
+                        placeholder="Semua Status"
+                        :options="['1' => 'Aktif', '0' => 'Nonaktif']"
+                        :value="request('active')"
+                    />
+                </div>
+                <div class="lg:col-span-2 flex flex-wrap items-end gap-2 lg:justify-end">
+                    <x-button type="submit" size="sm">
+                        <i class="bi bi-funnel"></i>
+                        Terapkan
+                    </x-button>
+                    <x-button href="{{ route('master.positions.index') }}" size="sm" variant="secondary" class="{{ $hasFilters ? '' : 'pointer-events-none opacity-60' }}">
+                        <i class="bi bi-arrow-counterclockwise"></i>
+                        Reset
+                    </x-button>
+                </div>
+            </div>
+
+            @if($hasFilters)
+                <div class="flex flex-wrap items-center gap-2 border-t border-[var(--surface-glass-border)] pt-4">
+                    <span class="text-xs font-semibold uppercase tracking-wide text-[var(--text-tertiary)]">Filter aktif</span>
+                    @if(request()->filled('search'))
+                        <a href="{{ route('master.positions.index', request()->except('search', 'page')) }}"
+                           class="badge-default inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs transition hover:bg-[var(--surface-glass-elevated)]">
+                            <i class="bi bi-search text-[var(--text-tertiary)]"></i>
+                            <span>{{ Str::limit(request('search'), 24) }}</span>
+                            <i class="bi bi-x-lg text-[var(--text-tertiary)]"></i>
+                        </a>
+                    @endif
+                    @if(request()->filled('can_approve'))
+                        <a href="{{ route('master.positions.index', request()->except('can_approve', 'page')) }}"
+                           class="badge-default inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs transition hover:bg-[var(--surface-glass-elevated)]">
+                            <i class="bi bi-shield-check text-[var(--text-tertiary)]"></i>
+                            <span>{{ request('can_approve') === '1' ? 'Dapat Approve' : 'Tidak Dapat Approve' }}</span>
+                            <i class="bi bi-x-lg text-[var(--text-tertiary)]"></i>
+                        </a>
+                    @endif
+                    @if(request()->filled('active'))
+                        <a href="{{ route('master.positions.index', request()->except('active', 'page')) }}"
+                           class="badge-default inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs transition hover:bg-[var(--surface-glass-elevated)]">
+                            <i class="bi bi-toggle-on text-[var(--text-tertiary)]"></i>
+                            <span>Status: {{ request('active') === '1' ? 'Aktif' : 'Nonaktif' }}</span>
+                            <i class="bi bi-x-lg text-[var(--text-tertiary)]"></i>
+                        </a>
+                    @endif
+                    <a href="{{ route('master.positions.index') }}" class="text-xs text-[var(--text-tertiary)] hover:text-[var(--text-primary)]">
+                        Reset semua
+                    </a>
+                </div>
+            @endif
+
+            <div class="flex flex-wrap items-center justify-between gap-2 border-t border-[var(--surface-glass-border)] pt-4 text-xs text-[var(--text-tertiary)]">
+                <span>Menampilkan {{ $resultFrom }}-{{ $resultTo }} dari {{ $positions->total() }} data</span>
+                <span>Urutan: level</span>
+            </div>
+        </form>
+    </x-glass-card>
 
     {{-- Table --}}
     <x-table>
@@ -45,6 +132,7 @@
                     @if($position->description)
                         <div class="text-xs text-[var(--text-tertiary)]">{{ Str::limit($position->description, 50) }}</div>
                     @endif
+                    <div class="text-xs text-[var(--text-tertiary)]">{{ $position->users_count ?? 0 }} pengguna</div>
                 </td>
                 <td>
                     <x-badge type="info" size="sm">Level {{ $position->level }}</x-badge>
@@ -66,7 +154,7 @@
                 <td class="text-right">
                     <div class="flex justify-end gap-2">
                         @can('master.edit')
-                            <x-button type="button" size="sm" variant="secondary" onclick='editItem(@json($position))'>
+                            <x-button type="button" size="sm" variant="secondary" onclick="editItem(@js($position))" aria-label="Edit jabatan" title="Edit jabatan">
                                 <i class="bi bi-pencil"></i>
                             </x-button>
                         @endcan
@@ -75,7 +163,7 @@
                                   onsubmit="return confirm('Yakin ingin menghapus?')">
                                 @csrf
                                 @method('DELETE')
-                                <x-button type="submit" size="sm" variant="danger">
+                                <x-button type="submit" size="sm" variant="danger" aria-label="Hapus jabatan" title="Hapus jabatan">
                                     <i class="bi bi-trash"></i>
                                 </x-button>
                             </form>
@@ -89,6 +177,11 @@
                     <div class="space-y-3 text-[var(--text-tertiary)]">
                         <i class="bi bi-person-badge text-3xl opacity-40"></i>
                         <p class="text-sm">Tidak ada data jabatan.</p>
+                        @can('master.create')
+                            <x-button type="button" size="sm" @click="$dispatch('open-modal', 'createPositionModal')">
+                                Tambah Jabatan
+                            </x-button>
+                        @endcan
                     </div>
                 </td>
             </tr>
@@ -120,18 +213,20 @@
                 <x-input type="number" name="level" label="Level" value="1" min="1" max="10" />
                 <p class="text-xs text-[var(--text-tertiary)]">1 = tertinggi, 10 = terendah</p>
             </div>
-            <x-input type="number" name="sort_order" label="Urutan" value="0" min="0" />
+            <x-input type="number" name="sort_order" label="Urutan" min="0" placeholder="Otomatis" hint="Kosongkan untuk urutan otomatis." />
         </div>
 
-        <label class="inline-flex items-center gap-2 text-sm text-[var(--text-secondary)]">
-            <input class="h-4 w-4 rounded border-[var(--surface-glass-border)] text-primary-500 focus:ring-primary-500" type="checkbox" name="can_approve_documents" value="1">
-            Dapat Approve Dokumen
-        </label>
+        <div class="flex flex-col gap-3">
+            <label class="inline-flex items-center gap-2 text-sm text-[var(--text-secondary)]">
+                <input class="h-4 w-4 rounded border-[var(--surface-glass-border)] text-primary-500 focus:ring-primary-500" type="checkbox" name="can_approve_documents" value="1">
+                Dapat Approve Dokumen
+            </label>
 
-        <label class="inline-flex items-center gap-2 text-sm text-[var(--text-secondary)]">
-            <input class="h-4 w-4 rounded border-[var(--surface-glass-border)] text-primary-500 focus:ring-primary-500" type="checkbox" name="is_active" value="1" checked>
-            Aktif
-        </label>
+            <label class="inline-flex items-center gap-2 text-sm text-[var(--text-secondary)]">
+                <input class="h-4 w-4 rounded border-[var(--surface-glass-border)] text-primary-500 focus:ring-primary-500" type="checkbox" name="is_active" value="1" checked>
+                Aktif
+            </label>
+        </div>
 
         <div class="flex flex-col-reverse gap-2 border-t border-[var(--surface-glass-border)] pt-4 sm:flex-row sm:justify-end">
             <x-button type="button" variant="secondary" x-on:click="$dispatch('close-modal', 'createPositionModal')">Batal</x-button>
@@ -156,18 +251,20 @@
         <x-textarea name="description" label="Deskripsi" rows="2" id="edit_description" />
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <x-input type="number" name="level" label="Level" min="1" max="10" id="edit_level" />
-            <x-input type="number" name="sort_order" label="Urutan" min="0" id="edit_sort_order" />
+            <x-input type="number" name="sort_order" label="Urutan" min="0" id="edit_sort_order" placeholder="Otomatis" hint="Kosongkan untuk urutan otomatis." />
         </div>
 
-        <label class="inline-flex items-center gap-2 text-sm text-[var(--text-secondary)]">
-            <input class="h-4 w-4 rounded border-[var(--surface-glass-border)] text-primary-500 focus:ring-primary-500" type="checkbox" name="can_approve_documents" id="edit_can_approve" value="1">
-            Dapat Approve Dokumen
-        </label>
+        <div class="flex flex-col gap-3">
+            <label class="inline-flex items-center gap-2 text-sm text-[var(--text-secondary)]">
+                <input class="h-4 w-4 rounded border-[var(--surface-glass-border)] text-primary-500 focus:ring-primary-500" type="checkbox" name="can_approve_documents" id="edit_can_approve" value="1">
+                Dapat Approve Dokumen
+            </label>
 
-        <label class="inline-flex items-center gap-2 text-sm text-[var(--text-secondary)]">
-            <input class="h-4 w-4 rounded border-[var(--surface-glass-border)] text-primary-500 focus:ring-primary-500" type="checkbox" name="is_active" id="edit_is_active" value="1">
-            Aktif
-        </label>
+            <label class="inline-flex items-center gap-2 text-sm text-[var(--text-secondary)]">
+                <input class="h-4 w-4 rounded border-[var(--surface-glass-border)] text-primary-500 focus:ring-primary-500" type="checkbox" name="is_active" id="edit_is_active" value="1">
+                Aktif
+            </label>
+        </div>
 
         <div class="flex flex-col-reverse gap-2 border-t border-[var(--surface-glass-border)] pt-4 sm:flex-row sm:justify-end">
             <x-button type="button" variant="secondary" x-on:click="$dispatch('close-modal', 'editPositionModal')">Batal</x-button>

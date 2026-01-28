@@ -146,41 +146,21 @@ Route::middleware('auth')->group(function () {
     // Master Data Routes
     Route::prefix('master')->name('master.')->middleware('permission:master.view')->group(function () {
         // Directorates
-        Route::resource('directorates', DirectorateController::class)->middleware([
-            'store' => 'permission:master.create',
-            'update' => 'permission:master.edit',
-            'destroy' => 'permission:master.delete',
-        ]);
+        Route::resource('directorates', DirectorateController::class);
         
         // Units
-        Route::resource('units', UnitController::class)->middleware([
-            'store' => 'permission:master.create',
-            'update' => 'permission:master.edit',
-            'destroy' => 'permission:master.delete',
-        ]);
+        Route::resource('units', UnitController::class);
         Route::get('/units-by-directorate/{directorate}', [UnitController::class, 'byDirectorate'])
             ->name('units.by-directorate');
         
         // Positions
-        Route::resource('positions', PositionController::class)->middleware([
-            'store' => 'permission:master.create',
-            'update' => 'permission:master.edit',
-            'destroy' => 'permission:master.delete',
-        ]);
+        Route::resource('positions', PositionController::class);
         
         // Document Types
-        Route::resource('document-types', DocumentTypeController::class)->middleware([
-            'store' => 'permission:master.create',
-            'update' => 'permission:master.edit',
-            'destroy' => 'permission:master.delete',
-        ]);
+        Route::resource('document-types', DocumentTypeController::class);
         
         // Document Categories
-        Route::resource('document-categories', DocumentCategoryController::class)->middleware([
-            'store' => 'permission:master.create',
-            'update' => 'permission:master.edit',
-            'destroy' => 'permission:master.delete',
-        ]);
+        Route::resource('document-categories', DocumentCategoryController::class);
         Route::get('/categories-by-type/{documentType}', [DocumentCategoryController::class, 'byType'])
             ->name('categories.by-type');
     });

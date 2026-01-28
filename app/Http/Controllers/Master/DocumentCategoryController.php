@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Master;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Master\DocumentCategoryRequest;
 use App\Models\AuditLog;
 use App\Models\DocumentCategory;
 use App\Models\DocumentType;
@@ -10,6 +11,13 @@ use Illuminate\Http\Request;
 
 class DocumentCategoryController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:master.create')->only(['create', 'store']);
+        $this->middleware('permission:master.edit')->only(['edit', 'update']);
+        $this->middleware('permission:master.delete')->only(['destroy']);
+    }
+
     /**
      * Display a listing of document categories
      */
@@ -54,22 +62,13 @@ class DocumentCategoryController extends Controller
     /**
      * Store a newly created category
      */
-    public function store(Request $request)
+    public function store(DocumentCategoryRequest $request)
     {
-        $validated = $request->validate([
-            'document_type_id' => ['required', 'exists:document_types,id'],
-            'code' => ['required', 'string', 'max:20', 'unique:document_categories'],
-            'name' => ['required', 'string', 'max:150'],
-            'description' => ['nullable', 'string'],
-            'is_active' => ['boolean'],
-        ], [
-            'document_type_id.required' => 'Jenis dokumen wajib dipilih.',
-            'code.required' => 'Kode kategori wajib diisi.',
-            'code.unique' => 'Kode kategori sudah digunakan.',
-            'name.required' => 'Nama kategori wajib diisi.',
-        ]);
-
-        $validated['sort_order'] = DocumentCategory::where('document_type_id', $validated['document_type_id'])->max('sort_order') + 1;
+        $validated = $request->validated();
+        if (!array_key_exists('sort_order', $validated) || $validated['sort_order'] === null) {
+            $validated['sort_order'] = (int) DocumentCategory::where('document_type_id', $validated['document_type_id'])
+                ->max('sort_order') + 1;
+        }
 
         $category = DocumentCategory::create($validated);
 
@@ -111,22 +110,20 @@ class DocumentCategoryController extends Controller
     /**
      * Update the specified category
      */
-    public function update(Request $request, DocumentCategory $documentCategory)
+    public function update(DocumentCategoryRequest $request, DocumentCategory $documentCategory)
     {
-        $validated = $request->validate([
-            'document_type_id' => ['required', 'exists:document_types,id'],
-            'code' => ['required', 'string', 'max:20', "unique:document_categories,code,{$documentCategory->id}"],
-            'name' => ['required', 'string', 'max:150'],
-            'description' => ['nullable', 'string'],
-            'is_active' => ['boolean'],
-        ], [
-            'document_type_id.required' => 'Jenis dokumen wajib dipilih.',
-            'code.required' => 'Kode kategori wajib diisi.',
-            'code.unique' => 'Kode kategori sudah digunakan.',
-            'name.required' => 'Nama kategori wajib diisi.',
-        ]);
+        $validated = $request->validated();
+        $oldValues = $documentCategory->only(['document_type_id', 'code', 'name', 'description', 'is_active', 'sort_order']);
+        $typeChanged = $documentCategory->document_type_id !== (int) $validated['document_type_id'];
 
-        $oldValues = $documentCategory->only(['document_type_id', 'code', 'name', 'description', 'is_active']);
+        if (!array_key_exists('sort_order', $validated) || $validated['sort_order'] === null) {
+            if ($typeChanged) {
+                $validated['sort_order'] = (int) DocumentCategory::where('document_type_id', $validated['document_type_id'])
+                    ->max('sort_order') + 1;
+            } else {
+                $validated['sort_order'] = $documentCategory->sort_order;
+            }
+        }
 
         $documentCategory->update($validated);
 

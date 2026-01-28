@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Master;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Master\UnitRequest;
 use App\Models\AuditLog;
 use App\Models\Directorate;
 use App\Models\Unit;
@@ -10,6 +11,13 @@ use Illuminate\Http\Request;
 
 class UnitController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:master.create')->only(['create', 'store']);
+        $this->middleware('permission:master.edit')->only(['edit', 'update']);
+        $this->middleware('permission:master.delete')->only(['destroy']);
+    }
+
     /**
      * Display a listing of units
      */
@@ -54,22 +62,13 @@ class UnitController extends Controller
     /**
      * Store a newly created unit
      */
-    public function store(Request $request)
+    public function store(UnitRequest $request)
     {
-        $validated = $request->validate([
-            'directorate_id' => ['required', 'exists:directorates,id'],
-            'code' => ['required', 'string', 'max:20', 'unique:units'],
-            'name' => ['required', 'string', 'max:150'],
-            'description' => ['nullable', 'string'],
-            'is_active' => ['boolean'],
-        ], [
-            'directorate_id.required' => 'Direktorat wajib dipilih.',
-            'code.required' => 'Kode unit wajib diisi.',
-            'code.unique' => 'Kode unit sudah digunakan.',
-            'name.required' => 'Nama unit wajib diisi.',
-        ]);
-
-        $validated['sort_order'] = Unit::where('directorate_id', $validated['directorate_id'])->max('sort_order') + 1;
+        $validated = $request->validated();
+        if (!array_key_exists('sort_order', $validated) || $validated['sort_order'] === null) {
+            $validated['sort_order'] = (int) Unit::where('directorate_id', $validated['directorate_id'])
+                ->max('sort_order') + 1;
+        }
 
         $unit = Unit::create($validated);
 
@@ -113,22 +112,20 @@ class UnitController extends Controller
     /**
      * Update the specified unit
      */
-    public function update(Request $request, Unit $unit)
+    public function update(UnitRequest $request, Unit $unit)
     {
-        $validated = $request->validate([
-            'directorate_id' => ['required', 'exists:directorates,id'],
-            'code' => ['required', 'string', 'max:20', "unique:units,code,{$unit->id}"],
-            'name' => ['required', 'string', 'max:150'],
-            'description' => ['nullable', 'string'],
-            'is_active' => ['boolean'],
-        ], [
-            'directorate_id.required' => 'Direktorat wajib dipilih.',
-            'code.required' => 'Kode unit wajib diisi.',
-            'code.unique' => 'Kode unit sudah digunakan.',
-            'name.required' => 'Nama unit wajib diisi.',
-        ]);
+        $validated = $request->validated();
+        $oldValues = $unit->only(['directorate_id', 'code', 'name', 'description', 'is_active', 'sort_order']);
+        $directorateChanged = $unit->directorate_id !== (int) $validated['directorate_id'];
 
-        $oldValues = $unit->only(['directorate_id', 'code', 'name', 'description', 'is_active']);
+        if (!array_key_exists('sort_order', $validated) || $validated['sort_order'] === null) {
+            if ($directorateChanged) {
+                $validated['sort_order'] = (int) Unit::where('directorate_id', $validated['directorate_id'])
+                    ->max('sort_order') + 1;
+            } else {
+                $validated['sort_order'] = $unit->sort_order;
+            }
+        }
 
         $unit->update($validated);
 
