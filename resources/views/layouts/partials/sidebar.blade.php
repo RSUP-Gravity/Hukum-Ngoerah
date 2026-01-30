@@ -198,6 +198,25 @@
                     </span>
                 </a>
 
+                @can('admin.user_analytics')
+                <a
+                    href="{{ route('admin.user-analytics.index') }}"
+                    class="sidebar-item {{ request()->routeIs('admin.user-analytics.*') ? 'active' : '' }}"
+                    title="User Analytic"
+                    aria-label="User Analytic"
+                >
+                    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3v18h18M7 15v3m5-7v7m5-11v11"></path>
+                    </svg>
+                    <span
+                        class="whitespace-nowrap overflow-hidden transition-all duration-300"
+                        :class="expanded ? 'opacity-100 w-auto' : 'opacity-0 w-0'"
+                    >
+                        User Analytic
+                    </span>
+                </a>
+                @endcan
+
                 <!-- Audit Log -->
                 <a
                     href="{{ route('admin.audit-logs.index') }}"

@@ -27,14 +27,33 @@
 
     {{-- Login Notification Modal for Critical Documents --}}
     @if($showLoginNotification && $criticalDocuments->count() > 0)
-    <div x-data="{ open: true }" x-show="open" x-cloak
-         class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div x-data="{
+            open: true,
+            acknowledged: false,
+            reminderMs: 30 * 60 * 1000,
+            init() {
+                setInterval(() => {
+                    if (!this.open) {
+                        this.open = true;
+                        this.acknowledged = false;
+                    }
+                }, this.reminderMs);
+            },
+            attemptClose() {
+                if (this.acknowledged) {
+                    this.open = false;
+                }
+            }
+        }"
+         x-show="open" x-cloak
+         class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true"
+         x-on:keydown.escape.window="attemptClose()">
         <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
             {{-- Backdrop --}}
             <div x-show="open" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0"
                  x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200"
                  x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
-                 class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm transition-opacity" @click="open = false"></div>
+                 class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm transition-opacity" @click="attemptClose()"></div>
 
             <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
 
@@ -110,18 +129,29 @@
                 </div>
                 
                 {{-- Footer Actions --}}
-                <div class="bg-[var(--surface-glass-elevated)] px-6 py-4 border-t border-[var(--surface-glass-border)] flex flex-col sm:flex-row gap-3 sm:justify-between">
-                    <a href="{{ route('documents.index', ['status' => 'expiring']) }}" 
-                       class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg text-white bg-gradient-to-r from-primary-500 to-lime-500 hover:from-primary-600 hover:to-lime-600 transition-all">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
-                        </svg>
-                        Lihat Semua Dokumen Kritis
-                    </a>
-                    <button @click="open = false" type="button"
-                            class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg text-[var(--text-secondary)] bg-[var(--surface-glass)] hover:bg-[var(--surface-glass-elevated)] border border-[var(--surface-glass-border)] transition-all">
-                        Tutup & Lanjutkan
-                    </button>
+                <div class="bg-[var(--surface-glass-elevated)] px-6 py-4 border-t border-[var(--surface-glass-border)]">
+                    <div class="flex items-start gap-3 text-sm text-[var(--text-secondary)]">
+                        <input type="checkbox" id="acknowledge-critical-docs" x-model="acknowledged"
+                               class="mt-1 h-4 w-4 rounded border-[var(--surface-glass-border)] text-primary-500 focus:ring-primary-500">
+                        <label for="acknowledge-critical-docs" class="leading-snug">
+                            Saya sudah mengetahui dokumen yang hampir kedaluwarsa dan perlu ditindaklanjuti.
+                        </label>
+                    </div>
+                    <div class="mt-4 flex flex-col sm:flex-row gap-3 sm:justify-between">
+                        <a href="{{ route('documents.index', ['status' => 'expiring']) }}" 
+                           class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg text-white bg-gradient-to-r from-primary-500 to-lime-500 hover:from-primary-600 hover:to-lime-600 transition-all">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                            </svg>
+                            Lihat Semua Dokumen Kritis
+                        </a>
+                        <button @click="attemptClose()" type="button"
+                                :disabled="!acknowledged"
+                                :aria-disabled="!acknowledged"
+                                class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg text-[var(--text-secondary)] bg-[var(--surface-glass)] hover:bg-[var(--surface-glass-elevated)] border border-[var(--surface-glass-border)] transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+                            Tutup & Lanjutkan
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>

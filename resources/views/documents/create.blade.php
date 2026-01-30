@@ -24,7 +24,57 @@
         </x-button>
     </div>
 
-    <form action="{{ route('documents.store') }}" method="POST" enctype="multipart/form-data" id="documentForm">
+    <form action="{{ route('documents.store') }}" method="POST" enctype="multipart/form-data" id="documentForm"
+        x-data="{
+            search: '',
+            candidates: @js($approverCandidates),
+            selected: [],
+            init() {
+                const selectedIds = (@js(old('approvers', [])) || []).map((id) => Number(id));
+                this.selected = this.candidates.filter((candidate) => selectedIds.includes(candidate.id));
+            },
+            get filteredCandidates() {
+                const keyword = this.search.trim().toLowerCase();
+                return this.candidates.filter((candidate) => {
+                    const meta = this.metaLine(candidate).toLowerCase();
+                    const haystack = `${candidate.name} ${meta}`.trim().toLowerCase();
+                    return !keyword || haystack.includes(keyword);
+                });
+            },
+            metaLine(candidate) {
+                const parts = [candidate.role, candidate.position, candidate.unit].filter((part) => part && part !== '-');
+                return parts.length ? parts.join(' - ') : '-';
+            },
+            isSelected(id) {
+                return this.selected.some((candidate) => candidate.id === id);
+            },
+            toggle(candidate) {
+                if (this.isSelected(candidate.id)) {
+                    this.remove(candidate.id);
+                    return;
+                }
+                this.selected.push(candidate);
+            },
+            remove(id) {
+                this.selected = this.selected.filter((candidate) => candidate.id !== id);
+            },
+            moveUp(index) {
+                if (index <= 0) {
+                    return;
+                }
+                const temp = this.selected[index - 1];
+                this.selected.splice(index - 1, 1, this.selected[index]);
+                this.selected.splice(index, 1, temp);
+            },
+            moveDown(index) {
+                if (index >= this.selected.length - 1) {
+                    return;
+                }
+                const temp = this.selected[index + 1];
+                this.selected.splice(index + 1, 1, this.selected[index]);
+                this.selected.splice(index, 1, temp);
+            },
+        }">
         @csrf
 
         <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
@@ -116,6 +166,118 @@
                         </div>
                     </div>
                 </x-glass-card>
+
+                @if($isStaff)
+                    <x-glass-card :hover="false" class="p-6">
+                        <div class="flex items-center gap-2">
+                            <i class="bi bi-person-check text-primary-500"></i>
+                            <h2 class="text-lg font-semibold text-[var(--text-primary)]">Pilih Approver</h2>
+                        </div>
+                        <div class="mt-4 space-y-2 text-sm text-[var(--text-secondary)]">
+                            <p>Dokumen akan langsung diajukan untuk approval setelah disimpan.</p>
+                            <p class="text-xs text-[var(--text-tertiary)]">Urutan approval mengikuti daftar di sisi kanan.</p>
+                        </div>
+
+                        <div class="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-5">
+                            <div class="lg:col-span-3">
+                                <div class="flex items-center justify-between">
+                                    <label class="text-sm font-medium text-[var(--text-primary)]">Calon Approver</label>
+                                    <span class="text-xs text-[var(--text-tertiary)]" x-text="`${filteredCandidates.length} tersedia`"></span>
+                                </div>
+                                <div class="relative mt-2">
+                                    <input
+                                        type="text"
+                                        x-model="search"
+                                        class="glass-input pr-9"
+                                        placeholder="Cari nama, jabatan, atau unit"
+                                    >
+                                    <i class="bi bi-search pointer-events-none absolute right-3 top-3 text-sm text-[var(--text-tertiary)]"></i>
+                                </div>
+                                <div class="mt-3 max-h-64 space-y-2 overflow-y-auto pr-1 custom-scrollbar">
+                                    <template x-for="candidate in filteredCandidates" :key="candidate.id">
+                                        <button
+                                            type="button"
+                                            class="w-full rounded-xl border px-3 py-2 text-left transition-all"
+                                            @click="toggle(candidate)"
+                                            :class="isSelected(candidate.id)
+                                                ? 'border-primary-400 bg-[var(--surface-elevated)]'
+                                                : 'border-[var(--surface-glass-border)] bg-[var(--surface-glass)] hover:border-[var(--surface-glass-border-hover)]'"
+                                        >
+                                            <div class="flex items-start justify-between gap-3">
+                                                <div>
+                                                    <div class="text-sm font-semibold text-[var(--text-primary)]" x-text="candidate.name"></div>
+                                                    <div class="text-xs text-[var(--text-tertiary)]" x-text="metaLine(candidate)"></div>
+                                                </div>
+                                                <div class="text-xs font-medium">
+                                                    <span x-show="isSelected(candidate.id)" class="inline-flex items-center gap-1 text-primary-500">
+                                                        <i class="bi bi-check-circle"></i>
+                                                        Terpilih
+                                                    </span>
+                                                    <span x-show="!isSelected(candidate.id)" class="inline-flex items-center gap-1 text-[var(--text-tertiary)]">
+                                                        <i class="bi bi-plus-circle"></i>
+                                                        Tambah
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </button>
+                                    </template>
+                                    <div
+                                        x-show="filteredCandidates.length === 0"
+                                        class="rounded-xl border border-dashed border-[var(--surface-glass-border)] p-4 text-center text-xs text-[var(--text-tertiary)]"
+                                    >
+                                        Tidak ada approver yang cocok.
+                                    </div>
+                                </div>
+                                <p class="mt-2 text-xs text-[var(--text-tertiary)]">Hanya pengguna dengan izin approve yang tampil di sini.</p>
+                            </div>
+
+                            <div class="lg:col-span-2">
+                                <div class="flex items-center justify-between">
+                                    <label class="text-sm font-medium text-[var(--text-primary)]">Rantai Approval</label>
+                                    <span class="text-xs text-[var(--text-tertiary)]" x-text="`${selected.length} dipilih`"></span>
+                                </div>
+                                <div class="mt-2 space-y-2">
+                                    <template x-for="(candidate, index) in selected" :key="candidate.id">
+                                        <div class="flex items-center justify-between gap-3 rounded-xl border border-[var(--surface-glass-border)] bg-[var(--surface-glass)] px-3 py-2">
+                                            <div class="min-w-0">
+                                                <div class="text-sm font-semibold text-[var(--text-primary)]" x-text="`${index + 1}. ${candidate.name}`"></div>
+                                                <div class="truncate text-xs text-[var(--text-tertiary)]" x-text="metaLine(candidate)"></div>
+                                            </div>
+                                            <div class="flex items-center gap-1">
+                                                <button type="button" class="btn-ghost px-2 py-2" @click="moveUp(index)" :disabled="index === 0" aria-label="Naikkan urutan">
+                                                    <i class="bi bi-chevron-up text-base"></i>
+                                                </button>
+                                                <button type="button" class="btn-ghost px-2 py-2" @click="moveDown(index)" :disabled="index === selected.length - 1" aria-label="Turunkan urutan">
+                                                    <i class="bi bi-chevron-down text-base"></i>
+                                                </button>
+                                                <button type="button" class="btn-ghost px-2 py-2 text-red-500 hover:text-red-600" @click="remove(candidate.id)" aria-label="Hapus approver">
+                                                    <i class="bi bi-x-circle text-base"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </template>
+                                    <div
+                                        x-show="selected.length === 0"
+                                        class="rounded-xl border border-dashed border-[var(--surface-glass-border)] p-4 text-center text-xs text-[var(--text-tertiary)]"
+                                    >
+                                        Pilih minimal 1 approver.
+                                    </div>
+                                </div>
+                                <p class="mt-2 text-xs text-[var(--text-tertiary)]">Gunakan tombol panah untuk mengubah urutan.</p>
+                            </div>
+                        </div>
+
+                        <template x-for="candidate in selected" :key="'input-' + candidate.id">
+                            <input type="hidden" name="approvers[]" :value="candidate.id">
+                        </template>
+                        @error('approvers')
+                            <p class="text-xs text-red-500">{{ $message }}</p>
+                        @enderror
+                        @error('approvers.*')
+                            <p class="text-xs text-red-500">{{ $message }}</p>
+                        @enderror
+                    </x-glass-card>
+                @endif
             </div>
 
             {{-- Sidebar --}}
@@ -175,10 +337,17 @@
                             <i class="bi bi-check-lg"></i>
                             Simpan sebagai Draft
                         </x-button>
-                        <x-button type="submit" name="submit_for_review" value="1" variant="secondary" class="w-full">
-                            <i class="bi bi-send"></i>
-                            Simpan & Ajukan Review
-                        </x-button>
+                        @if($isStaff)
+                            <x-button type="submit" name="submit_for_approval" value="1" variant="secondary" class="w-full" x-bind:disabled="selected.length === 0">
+                                <i class="bi bi-send"></i>
+                                Simpan & Ajukan Approval
+                            </x-button>
+                        @else
+                            <x-button type="submit" name="submit_for_review" value="1" variant="secondary" class="w-full">
+                                <i class="bi bi-send"></i>
+                                Simpan & Ajukan Review
+                            </x-button>
+                        @endif
                         <x-button href="{{ route('documents.index') }}" variant="ghost" class="w-full">
                             Batal
                         </x-button>

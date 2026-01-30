@@ -23,6 +23,9 @@
                 @can('manage users')
                 { label: 'Manajemen Pengguna', icon: 'users', url: '{{ route('admin.users.index') }}', category: 'Admin' },
                 @endcan
+                @can('admin.user_analytics')
+                { label: 'User Analytic', icon: 'chart', url: '{{ route('admin.user-analytics.index') }}', category: 'Admin' },
+                @endcan
                 @can('manage master data')
                 { label: 'Master Data - Direktorat', icon: 'building', url: '{{ route('master.directorates.index') }}', category: 'Master Data' },
                 { label: 'Master Data - Jabatan', icon: 'briefcase', url: '{{ route('master.positions.index') }}', category: 'Master Data' },

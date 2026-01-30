@@ -50,29 +50,20 @@ class DashboardController extends Controller
         // Get chart data
         $chartData = $isViewer ? [] : $this->getChartData($user);
 
-        // Check if we should show login notification popup
-        $showLoginNotification = false;
-        $criticalDocuments = collect();
-        
-        if ($request->session()->pull('show_login_notification', false)) {
-            // Only show for admin users
-            if ($user->hasPermission('documents.view_all') || $user->hasRole('admin')) {
-                // Get critical documents (expired or expiring within 30 days)
-                $criticalDocuments = Document::with(['documentType', 'directorate'])
-                    ->where(function ($query) {
-                        $query->expired()
-                            ->orWhere(function ($q) {
-                                $q->whereNotNull('expiry_date')
-                                    ->whereBetween('expiry_date', [now(), now()->addDays(30)]);
-                            });
-                    })
-                    ->orderBy('expiry_date', 'asc')
-                    ->limit(10)
-                    ->get();
-                
-                $showLoginNotification = $criticalDocuments->count() > 0;
-            }
-        }
+        // Check if we should show critical document popup
+        $criticalDocuments = Document::with(['documentType', 'directorate'])
+            ->accessibleBy($user)
+            ->where(function ($query) {
+                $query->expired()
+                    ->orWhere(function ($q) {
+                        $q->whereNotNull('expiry_date')
+                            ->whereBetween('expiry_date', [now(), now()->addDays(30)]);
+                    });
+            })
+            ->orderBy('expiry_date', 'asc')
+            ->limit(10)
+            ->get();
+        $showLoginNotification = $criticalDocuments->count() > 0;
 
         return view('dashboard', compact(
             'stats',

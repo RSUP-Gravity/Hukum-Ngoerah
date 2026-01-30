@@ -13,6 +13,7 @@ use App\Http\Controllers\Master\PositionController;
 use App\Http\Controllers\Master\DocumentTypeController;
 use App\Http\Controllers\Master\DocumentCategoryController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\UserAnalyticsController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\SystemSettingController;
@@ -185,6 +186,14 @@ Route::middleware('auth')->group(function () {
         
         // Roles
         Route::resource('roles', RoleController::class)->middleware('permission:admin.roles');
+
+        // User Analytics
+        Route::get('/user-analytics', [UserAnalyticsController::class, 'index'])
+            ->name('user-analytics.index')
+            ->middleware('permission:admin.user_analytics');
+        Route::get('/user-analytics/{user}', [UserAnalyticsController::class, 'show'])
+            ->name('user-analytics.show')
+            ->middleware('permission:admin.user_analytics');
         
         // Audit Logs
         Route::get('/audit-logs', [AuditLogController::class, 'index'])

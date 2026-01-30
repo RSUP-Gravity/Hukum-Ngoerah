@@ -51,6 +51,7 @@ class PermissionSeeder extends Seeder
             ['name' => 'admin.backup', 'display_name' => 'Backup Database', 'module' => 'admin'],
             ['name' => 'admin.roles', 'display_name' => 'Kelola Role', 'module' => 'admin'],
             ['name' => 'admin.permissions', 'display_name' => 'Kelola Permission', 'module' => 'admin'],
+            ['name' => 'admin.user_analytics', 'display_name' => 'User Analytic', 'module' => 'admin'],
 
             // Reports module
             ['name' => 'reports.view', 'display_name' => 'Lihat Laporan', 'module' => 'reports'],

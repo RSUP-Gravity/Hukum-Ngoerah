@@ -64,6 +64,7 @@ class AuthServiceProvider extends ServiceProvider
             'admin.roles',
             'admin.audit_logs',
             'admin.settings',
+            'admin.user_analytics',
             
             // Reports
             'reports.view',
@@ -75,5 +76,43 @@ class AuthServiceProvider extends ServiceProvider
                 return $user->hasPermission($permission);
             });
         }
+
+        Gate::define('manage-users', function (User $user) {
+            return $user->hasAnyPermission([
+                'users.view',
+                'users.create',
+                'users.edit',
+                'users.delete',
+                'users.reset_password',
+            ]);
+        });
+
+        Gate::define('manage users', function (User $user) {
+            return $user->hasAnyPermission([
+                'users.view',
+                'users.create',
+                'users.edit',
+                'users.delete',
+                'users.reset_password',
+            ]);
+        });
+
+        Gate::define('manage-master-data', function (User $user) {
+            return $user->hasAnyPermission([
+                'master.view',
+                'master.create',
+                'master.edit',
+                'master.delete',
+            ]);
+        });
+
+        Gate::define('manage master data', function (User $user) {
+            return $user->hasAnyPermission([
+                'master.view',
+                'master.create',
+                'master.edit',
+                'master.delete',
+            ]);
+        });
     }
 }

@@ -115,8 +115,31 @@ class DocumentController extends Controller
         $types = DocumentType::active()->sorted()->get();
         $categories = DocumentCategory::active()->sorted()->get();
         $units = Unit::with('directorate')->active()->sorted()->get();
+        $user = auth()->user();
+        $isStaff = $user?->hasAnyRole(['legal_staff', 'unit_staff']);
+        $approverCandidates = collect();
+
+        if ($isStaff) {
+            $approverCandidates = User::active()
+                ->whereHas('role.permissions', function ($query) {
+                    $query->where('name', 'documents.approve');
+                })
+                ->with(['role:id,name,display_name', 'position:id,name', 'unit:id,name'])
+                ->orderBy('name')
+                ->get(['id', 'name', 'role_id', 'position_id', 'unit_id'])
+                ->map(function ($user) {
+                    return [
+                        'id' => $user->id,
+                        'name' => $user->name,
+                        'role' => $user->role?->display_name ?? $user->role?->name ?? '-',
+                        'position' => $user->position?->name ?? '-',
+                        'unit' => $user->unit?->name ?? '-',
+                    ];
+                })
+                ->values();
+        }
         
-        return view('documents.create', compact('types', 'categories', 'units'));
+        return view('documents.create', compact('types', 'categories', 'units', 'approverCandidates', 'isStaff'));
     }
 
     /**
@@ -124,7 +147,11 @@ class DocumentController extends Controller
      */
     public function store(Request $request)
     {
-        $validated = $request->validate([
+        $user = auth()->user();
+        $isStaff = $user->hasAnyRole(['legal_staff', 'unit_staff']);
+        $submitForApproval = $isStaff && $request->boolean('submit_for_approval');
+
+        $rules = [
             'title' => ['required', 'string', 'max:500'],
             'document_number' => ['nullable', 'string', 'max:100'],
             'document_type_id' => ['required', 'exists:document_types,id'],
@@ -138,7 +165,9 @@ class DocumentController extends Controller
             'notes' => ['nullable', 'string'],
             'confidentiality' => ['required', Rule::in(array_keys(Document::CONFIDENTIALITIES))],
             'file' => ['required', 'file', 'mimes:pdf,doc,docx', 'max:51200'], // 50MB max
-        ], [
+        ];
+
+        $messages = [
             'title.required' => 'Judul dokumen wajib diisi.',
             'document_type_id.required' => 'Jenis dokumen wajib dipilih.',
             'document_date.required' => 'Tanggal dokumen wajib diisi.',
@@ -146,12 +175,40 @@ class DocumentController extends Controller
             'file.required' => 'File dokumen wajib diunggah.',
             'file.mimes' => 'File harus berformat PDF, DOC, atau DOCX.',
             'file.max' => 'Ukuran file maksimal 50MB.',
-        ]);
+        ];
+
+        if ($submitForApproval) {
+            $rules['approvers'] = ['required', 'array', 'min:1'];
+            $rules['approvers.*'] = ['required', 'integer', 'distinct', 'exists:users,id'];
+            $messages['approvers.required'] = 'Pilih minimal 1 approver.';
+            $messages['approvers.min'] = 'Pilih minimal 1 approver.';
+            $messages['approvers.*.exists'] = 'Approver tidak valid.';
+        }
+
+        $validated = $request->validate($rules, $messages);
+
+        $approverIds = [];
+        if ($submitForApproval) {
+            $approverIds = array_values($validated['approvers'] ?? []);
+
+            $validApproverIds = User::active()
+                ->whereIn('id', $approverIds)
+                ->whereHas('role.permissions', function ($query) {
+                    $query->where('name', 'documents.approve');
+                })
+                ->pluck('id')
+                ->all();
+
+            if (count($validApproverIds) !== count($approverIds)) {
+                return back()->withInput()->with('error', 'Approver harus memiliki izin approve.');
+            }
+        }
 
         try {
             DB::beginTransaction();
-
-            $user = auth()->user();
+            $documentStatus = $submitForApproval
+                ? Document::STATUS_PENDING_APPROVAL
+                : Document::STATUS_DRAFT;
             
             // Generate document number if not provided
             if (empty($validated['document_number'])) {
@@ -173,7 +230,7 @@ class DocumentController extends Controller
                 'description' => $validated['description'],
                 'notes' => $validated['notes'],
                 'confidentiality' => $validated['confidentiality'],
-                'status' => Document::STATUS_DRAFT,
+                'status' => $documentStatus,
                 'created_by' => $user->id,
                 'updated_by' => $user->id,
             ]);
@@ -201,6 +258,52 @@ class DocumentController extends Controller
                 'description' => 'Dokumen dibuat.',
             ]);
 
+            if ($submitForApproval) {
+                $sequence = 1;
+                foreach ($approverIds as $approverId) {
+                    DocumentApproval::create([
+                        'document_id' => $document->id,
+                        'approver_id' => $approverId,
+                        'sequence' => $sequence++,
+                        'status' => 'pending',
+                    ]);
+                }
+
+                DocumentHistory::create([
+                    'document_id' => $document->id,
+                    'action' => DocumentHistory::ACTION_SUBMITTED_APPROVAL,
+                    'performed_by' => $user->id,
+                    'old_values' => ['status' => Document::STATUS_DRAFT],
+                    'new_values' => ['status' => Document::STATUS_PENDING_APPROVAL],
+                    'description' => 'Dokumen diajukan untuk approval.',
+                ]);
+
+                $firstApproval = $document->approvals()->orderBy('sequence')->first();
+                if ($firstApproval) {
+                    Notification::create([
+                        'user_id' => $firstApproval->approver_id,
+                        'title' => 'Dokumen Menunggu Approval',
+                        'message' => "Dokumen '{$document->title}' membutuhkan approval Anda.",
+                        'type' => Notification::TYPE_APPROVAL_REQUIRED,
+                        'priority' => Notification::PRIORITY_HIGH,
+                        'entity_type' => 'Document',
+                        'entity_id' => $document->id,
+                        'action_url' => route('documents.show', $document),
+                    ]);
+                }
+
+                AuditLog::log(
+                    'status_changed',
+                    AuditLog::MODULE_DOCUMENTS,
+                    'Document',
+                    $document->id,
+                    $document->title,
+                    ['status' => Document::STATUS_DRAFT],
+                    ['status' => Document::STATUS_PENDING_APPROVAL],
+                    'Dokumen diajukan untuk approval.'
+                );
+            }
+
             // Audit log
             AuditLog::log(
                 'created',
@@ -215,8 +318,12 @@ class DocumentController extends Controller
 
             DB::commit();
 
+            $successMessage = $submitForApproval
+                ? 'Dokumen berhasil diajukan untuk approval.'
+                : 'Dokumen berhasil ditambahkan.';
+
             return redirect()->route('documents.show', $document)
-                ->with('success', 'Dokumen berhasil ditambahkan.');
+                ->with('success', $successMessage);
                 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -493,8 +600,9 @@ class DocumentController extends Controller
                 'message' => "Dokumen '{$document->title}' membutuhkan review Anda.",
                 'type' => Notification::TYPE_DOCUMENT_SUBMITTED,
                 'priority' => Notification::PRIORITY_NORMAL,
-                'related_model' => 'Document',
-                'related_id' => $document->id,
+                'entity_type' => 'Document',
+                'entity_id' => $document->id,
+                'action_url' => route('documents.show', $document),
             ]);
         }
 
@@ -591,8 +699,9 @@ class DocumentController extends Controller
                 'message' => "Dokumen '{$document->title}' membutuhkan approval Anda.",
                 'type' => Notification::TYPE_APPROVAL_REQUIRED,
                 'priority' => Notification::PRIORITY_HIGH,
-                'related_model' => 'Document',
-                'related_id' => $document->id,
+                'entity_type' => 'Document',
+                'entity_id' => $document->id,
+                'action_url' => route('documents.show', $document),
             ]);
         }
 
@@ -650,6 +759,16 @@ class DocumentController extends Controller
                 'description' => 'Dokumen disetujui.',
             ]);
 
+            Notification::where('user_id', $user->id)
+                ->where('type', Notification::TYPE_APPROVAL_REQUIRED)
+                ->where('entity_type', 'Document')
+                ->where('entity_id', $document->id)
+                ->where('is_read', false)
+                ->update([
+                    'is_read' => true,
+                    'read_at' => now(),
+                ]);
+
             // Check if all approvals are complete
             $pendingApprovals = $document->approvals()->where('status', 'pending')->count();
             
@@ -678,8 +797,9 @@ class DocumentController extends Controller
                     'message' => "Dokumen '{$document->title}' telah disetujui.",
                     'type' => Notification::TYPE_APPROVAL_APPROVED,
                     'priority' => Notification::PRIORITY_NORMAL,
-                    'related_model' => 'Document',
-                    'related_id' => $document->id,
+                    'entity_type' => 'Document',
+                    'entity_id' => $document->id,
+                    'action_url' => route('documents.show', $document),
                 ]);
             } else {
                 // Notify next approver
@@ -695,8 +815,9 @@ class DocumentController extends Controller
                         'message' => "Dokumen '{$document->title}' membutuhkan approval Anda.",
                         'type' => Notification::TYPE_APPROVAL_REQUIRED,
                         'priority' => Notification::PRIORITY_HIGH,
-                        'related_model' => 'Document',
-                        'related_id' => $document->id,
+                        'entity_type' => 'Document',
+                        'entity_id' => $document->id,
+                        'action_url' => route('documents.show', $document),
                     ]);
                 }
             }
@@ -771,6 +892,16 @@ class DocumentController extends Controller
                 'description' => 'Dokumen ditolak: ' . $request->rejection_reason,
             ]);
 
+            Notification::where('user_id', $user->id)
+                ->where('type', Notification::TYPE_APPROVAL_REQUIRED)
+                ->where('entity_type', 'Document')
+                ->where('entity_id', $document->id)
+                ->where('is_read', false)
+                ->update([
+                    'is_read' => true,
+                    'read_at' => now(),
+                ]);
+
             // Notify document creator
             Notification::create([
                 'user_id' => $document->created_by,
@@ -778,8 +909,9 @@ class DocumentController extends Controller
                 'message' => "Dokumen '{$document->title}' ditolak. Alasan: {$request->rejection_reason}",
                 'type' => Notification::TYPE_APPROVAL_REJECTED,
                 'priority' => Notification::PRIORITY_HIGH,
-                'related_model' => 'Document',
-                'related_id' => $document->id,
+                'entity_type' => 'Document',
+                'entity_id' => $document->id,
+                'action_url' => route('documents.show', $document),
             ]);
 
             AuditLog::log(
