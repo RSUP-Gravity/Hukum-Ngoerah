@@ -40,6 +40,7 @@
                 <div class="nav-links hidden md:flex items-center gap-1">
                     <a href="#features" class="nav-link">Fitur</a>
                     <a href="#access" class="nav-link">Akses</a>
+                    <a href="{{ route('panduan') }}" class="nav-link">Panduan</a>
                     <a href="{{ route('public.documents') }}" class="nav-link">Dokumen Publik</a>
                     <a href="#faq" class="nav-link">FAQ</a>
                 </div>
@@ -67,6 +68,7 @@
             <div id="mobile-menu-panel" class="mobile-menu-panel md:hidden" data-mobile-menu hidden>
                 <a href="#features" class="mobile-menu-link">Fitur</a>
                 <a href="#access" class="mobile-menu-link">Akses</a>
+                <a href="{{ route('panduan') }}" class="mobile-menu-link">Panduan</a>
                 <a href="{{ route('public.documents') }}" class="mobile-menu-link">Dokumen Publik</a>
                 <a href="#faq" class="mobile-menu-link">FAQ</a>
                 <div class="mobile-menu-divider"></div>
@@ -159,7 +161,9 @@
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div class="feature-card access-card reveal flex flex-col">
+                    <a href="{{ route('public.documents') }}"
+                        class="feature-card access-card access-card-link reveal flex flex-col no-underline text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]/50"
+                        aria-label="Lihat dokumen publik">
                         <div class="icon-container bg-[var(--color-primary)]/10 text-[var(--color-primary)]">
                             <i class="bi bi-globe2"></i>
                         </div>
@@ -181,13 +185,15 @@
                                 <span>Unduh dokumen publik</span>
                             </li>
                         </ul>
-                        <a href="{{ route('public.documents') }}" class="access-link mt-6">
+                        <span class="access-link mt-6">
                             Lihat Dokumen Publik
                             <i class="bi bi-arrow-right"></i>
-                        </a>
-                    </div>
+                        </span>
+                    </a>
 
-                    <div class="feature-card access-card reveal delay-1 flex flex-col">
+                    <a href="{{ route('login') }}"
+                        class="feature-card access-card access-card-link reveal delay-1 flex flex-col no-underline text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]/50"
+                        aria-label="Masuk ke portal pegawai">
                         <div class="icon-container bg-lime-500/10 text-lime-600 dark:text-lime-400">
                             <i class="bi bi-shield-lock"></i>
                         </div>
@@ -209,11 +215,11 @@
                                 <span>Hak akses berbasis role</span>
                             </li>
                         </ul>
-                        <a href="{{ route('login') }}" class="access-link access-link-primary mt-6">
+                        <span class="access-link access-link-primary mt-6">
                             Masuk ke Portal
                             <i class="bi bi-arrow-right"></i>
-                        </a>
-                    </div>
+                        </span>
+                    </a>
                 </div>
 
                 <div class="mt-10 flex flex-wrap items-center justify-center gap-4 reveal delay-2">
@@ -594,6 +600,12 @@
                                 <a href="{{ route('public.documents') }}"
                                     class="text-sm text-[var(--text-tertiary)] hover:text-[var(--color-primary)] transition-colors">
                                     Dokumen Publik
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{{ route('panduan') }}"
+                                    class="text-sm text-[var(--text-tertiary)] hover:text-[var(--color-primary)] transition-colors">
+                                    Panduan
                                 </a>
                             </li>
                             <li>

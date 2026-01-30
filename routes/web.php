@@ -29,6 +29,13 @@ use Illuminate\Support\Facades\Route;
 
 // Public Routes
 Route::view('/', 'landing')->name('landing');
+Route::view('/panduan', 'public.panduan')->name('panduan');
+Route::view('/panduan/persiapan-awal', 'public.panduan-persiapan-awal')->name('panduan.persiapan-awal');
+Route::view('/panduan/jalur-akses', 'public.panduan-jalur-akses')->name('panduan.jalur-akses');
+Route::view('/panduan/login-pegawai', 'public.panduan-login-pegawai')->name('panduan.login-pegawai');
+Route::view('/panduan/pencarian-filter', 'public.panduan-pencarian-filter')->name('panduan.pencarian-filter');
+Route::view('/panduan/unduh-dokumen', 'public.panduan-unduh-dokumen')->name('panduan.unduh-dokumen');
+Route::view('/panduan/bantuan', 'public.panduan-bantuan')->name('panduan.bantuan');
 Route::get('/dokumen-publik', [PublicDocumentController::class, 'index'])->name('public.documents');
 
 // Guest Routes (not authenticated)

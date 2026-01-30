@@ -38,6 +38,7 @@
                 <div class="nav-links hidden md:flex items-center gap-1">
                     <a href="{{ route('landing') }}#features" class="nav-link">Fitur</a>
                     <a href="{{ route('landing') }}#stats" class="nav-link">Statistik</a>
+                    <a href="{{ route('panduan') }}" class="nav-link">Panduan</a>
                     <a href="{{ route('public.documents') }}" class="nav-link active">Dokumen</a>
                     <a href="{{ route('landing') }}#faq" class="nav-link">FAQ</a>
                 </div>
@@ -54,11 +55,25 @@
                         <i class="bi bi-moon-stars-fill theme-toggle-icon moon-icon text-[var(--text-secondary)]"></i>
                     </button>
                     {{-- Mobile menu button --}}
-                    <button type="button" class="mobile-menu-btn md:hidden" aria-label="Menu">
+                    <button type="button" class="mobile-menu-btn md:hidden" aria-label="Menu" aria-expanded="false"
+                        aria-controls="mobile-menu-panel" data-mobile-menu-toggle>
                         <i class="bi bi-list text-lg"></i>
                     </button>
                 </div>
             </nav>
+
+            <div id="mobile-menu-panel" class="mobile-menu-panel md:hidden" data-mobile-menu hidden>
+                <a href="{{ route('landing') }}#features" class="mobile-menu-link">Fitur</a>
+                <a href="{{ route('landing') }}#access" class="mobile-menu-link">Akses</a>
+                <a href="{{ route('panduan') }}" class="mobile-menu-link">Panduan</a>
+                <a href="{{ route('public.documents') }}" class="mobile-menu-link">Dokumen Publik</a>
+                <a href="{{ route('landing') }}#faq" class="mobile-menu-link">FAQ</a>
+                <div class="mobile-menu-divider"></div>
+                <a href="{{ route('login') }}" class="mobile-menu-link mobile-menu-cta">
+                    <i class="bi bi-box-arrow-in-right"></i>
+                    Masuk ke Portal
+                </a>
+            </div>
         </div>
 
         {{-- Hero Mini Section --}}
